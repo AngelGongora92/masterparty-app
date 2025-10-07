@@ -1,30 +1,14 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, addDoc, query, where } from 'firebase/firestore';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { doc, getDoc, setDoc, onSnapshot, collection, addDoc, query, where } from 'firebase/firestore';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Search, Sparkles, Menu, CalendarCheck, Briefcase, ShieldCheck, DollarSign, Building2, Utensils, Gift, Music, Camera, Sofa, Plus, MapPin, Tag, Euro, X, Trash2, Edit } from 'lucide-react';
+import { auth, db, appId } from './firebase';
+import LoginScreen from './LoginScreen.jsx';
+import RegisterScreen from './RegisterScreen.jsx';
 
 // =====================================================================
-// 1. CONFIGURACIÓN INICIAL DE FIREBASE (REQUIERE VARIABLES GLOBALES)
+// 1. CONFIGURACIÓN INICIAL
 // =====================================================================
-
-// Se asume que estas variables globales son inyectadas por el entorno de Canvas.
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-masterparty-app-id';
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-let app;
-let db;
-let auth;
-
-if (firebaseConfig) {
-    app = initializeApp(firebaseConfig);
-    db = getFirestore(app);
-    auth = getAuth(app);
-    // Para depuración, se puede descomentar si es necesario:
-    // import { setLogLevel } from 'firebase/firestore';
-    // setLogLevel('debug'); 
-}
 
 // Lista de Categorías de Servicio
 const serviceCategories = ['Lugar', 'Catering', 'Mobiliario', 'Decoración', 'Música/DJ', 'Fotografía', 'Transporte', 'Otros'];
@@ -38,8 +22,8 @@ const serviceCategories = ['Lugar', 'Catering', 'Mobiliario', 'Decoración', 'M�
  */
 const ClientHomeView = ({ userId }) => {
     // Hooks de estado para manejar la selección de filtros del cliente (Fecha y Tipo)
-    const [eventDate, setEventDate] = useState('2024-12-31');
-    const [serviceType, setServiceType] = useState('Lugar');
+    const [eventDate, setEventDate] = useState('');
+    const [serviceType, setServiceType] = useState('');
 
     // Maneja la acción de búsqueda
     const handleFormSubmit = (e) => {
@@ -86,11 +70,14 @@ const ClientHomeView = ({ userId }) => {
                             <label htmlFor="date-input" className="block text-xs font-bold uppercase text-gray-600 text-left mb-1">Fecha de tu Evento</label>
                             <div className="relative">
                                 <CalendarCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 text-violet-500 w-5 h-5" />
-                                <input 
-                                    type="date" 
-                                    id="date-input" 
+                                <input
+                                    type={eventDate ? "date" : "text"}
+                                    id="date-input"
                                     value={eventDate}
                                     onChange={(e) => setEventDate(e.target.value)}
+                                    onFocus={(e) => e.target.type = 'date'}
+                                    onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
+                                    placeholder="Todas las fechas"
                                     className="w-full pl-10 p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition text-gray-800 h-12"
                                 />
                             </div>
@@ -107,6 +94,7 @@ const ClientHomeView = ({ userId }) => {
                                     onChange={(e) => setServiceType(e.target.value)}
                                     className="w-full pl-10 p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition text-gray-800 appearance-none h-12"
                                 >
+                                    <option value="">Todos los servicios</option>
                                     {serviceCategories.map(cat => <option key={cat}>{cat}</option>)}
                                 </select>
                             </div>
@@ -491,6 +479,7 @@ export default function App() {
     const [user, setUser] = useState(null);
     const [isAuthReady, setIsAuthReady] = useState(false);
     const [userRole, setUserRole] = useState('cliente'); // Estado para simular el rol
+    const [authView, setAuthView] = useState('login'); // 'login' o 'register'
 
     const userId = user?.uid || 'guest';
 
@@ -499,30 +488,16 @@ export default function App() {
     // ----------------------------------------------------
     useEffect(() => {
         if (!auth) {
-            console.error("Firebase Auth no está inicializado.");
+            console.error("Firebase Auth no está inicializado.", initialAuthToken); // Se mantiene initialAuthToken para evitar errores si se usa en otro lado.
             setIsAuthReady(true);
             return;
         }
 
-        const handleAuth = async () => {
-            try {
-                // 1. Intenta autenticar con el token si está disponible
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    // 2. Si no hay token, inicia sesión anónimamente
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                console.error("Error al iniciar sesión en Firebase:", error);
-            }
-        };
-
-        // 3. Escucha cambios en el estado de autenticación
+        // Escucha cambios en el estado de autenticación
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             setUser(currentUser);
             if (currentUser) {
-                // 4. Cargar el rol del usuario de Firestore o establecer un valor por defecto
+                // Cargar el rol del usuario de Firestore o establecer un valor por defecto
                 try {
                     // Ruta de perfil privada: /artifacts/{appId}/users/{userId}/profile/settings
                     const userDocRef = doc(db, `artifacts/${appId}/users/${currentUser.uid}/profile/settings`);
@@ -531,7 +506,8 @@ export default function App() {
                     if (docSnap.exists() && docSnap.data().role) {
                         setUserRole(docSnap.data().role);
                     } else {
-                        // Crear el documento de rol por primera vez si no existe
+                        // Esto es un fallback, el registro ya debería haber creado el perfil.
+                        // Podría ser útil si un usuario se crea desde el backend de Firebase.
                         await setDoc(userDocRef, { role: 'cliente', createdAt: Date.now() }, { merge: true });
                         setUserRole('cliente');
                     }
@@ -542,13 +518,8 @@ export default function App() {
             setIsAuthReady(true);
         });
 
-        // Ejecutar el manejo de autenticación si aún no se ha iniciado
-        if (!user && !isAuthReady) {
-            handleAuth();
-        }
-
         return () => unsubscribe();
-    }, [isAuthReady]);
+    }, []);
 
 
     // ----------------------------------------------------
@@ -557,6 +528,15 @@ export default function App() {
 
     if (!isAuthReady) {
         return <LandingView />;
+    }
+
+    if (!user) {
+        if (authView === 'login') {
+            return <LoginScreen onSwitchView={setAuthView} />;
+        }
+        if (authView === 'register') {
+            return <RegisterScreen onSwitchView={setAuthView} />;
+        }
     }
 
     const renderContent = () => {
@@ -633,9 +613,14 @@ export default function App() {
                         </select>
                         
                         {/* Botón de Acceder/Menú */}
-                        <a href="#" className="cta-button text-white px-3 py-1.5 rounded-xl shadow-md font-semibold text-sm hidden sm:block">
-                            Acceder
-                        </a>
+                        <button 
+                            onClick={() => signOut(auth)}
+                            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-xl shadow-md font-semibold text-sm hidden sm:block"
+                        >
+                            Salir
+                        </button>
+
+
                         <button className="sm:hidden text-gray-700 text-xl p-1">
                             <Menu className="w-6 h-6" />
                         </button>
