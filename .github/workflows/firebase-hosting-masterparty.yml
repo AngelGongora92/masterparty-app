@@ -38,10 +38,10 @@ jobs:
         with:
           # Token de GitHub para la acción (necesario por defecto)
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          
-          # Token de CI de Firebase para autenticar el despliegue
-          firebaseToken: '${{ secrets.FIREBASE_TOKEN }}'
-          
+
+          # Para la versión @v0, se usa 'firebaseServiceAccount' para pasar el JSON de la cuenta de servicio.
+          firebaseServiceAccount: '${{ secrets.FIREBASE_TOKEN }}'
+
           channelId: live
           # ID del proyecto en Firebase
           projectId: masterparty-app
