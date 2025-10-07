@@ -45,5 +45,3 @@ jobs:
           channelId: live
           # ID del proyecto en Firebase
           projectId: masterparty-app
-          # Especifica el target de despliegue definido en firebase.json
-          target: masterparty-app
