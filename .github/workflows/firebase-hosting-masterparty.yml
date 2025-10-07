@@ -1,0 +1,45 @@
+name: Deploy MasterParty to Firebase Hosting
+
+# Este flujo de trabajo se ejecuta cada vez que hay cambios en la rama 'main'.
+on:
+  push:
+    branches:
+      - main
+  # También puedes ejecutar el flujo manualmente si es necesario
+  workflow_dispatch:
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    
+    # Este paso solo se ejecutará si el push fue en la rama 'main'
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        # Usamos Node.js 20, recomendado para la mayoría de los proyectos React/Vite.
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm' # Habilita caché para acelerar la instalación de dependencias
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Application (Vite/React)
+        # Este comando compila tu código y genera la carpeta 'dist'
+        run: npm run build
+
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          # ID del proyecto de Firebase que creaste (ej: masterparty-app-2025)
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_MASTERPARTY_APP_2025 }}'
+          channelId: live
+          projectId: masterparty-app-2025 # ¡ACTUALIZA ESTE CAMPO CON TU ID REAL!
+          # El directorio público debe coincidir con lo configurado en firebase.json
+          target: dist
