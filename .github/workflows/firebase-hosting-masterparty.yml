@@ -38,8 +38,11 @@ jobs:
         with:
           # Token de GitHub para la acción (necesario por defecto)
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          # CRÍTICO: Usamos el token de autenticación (FIREBASE_TOKEN) que creaste como Secreto en GitHub.
-          token: '${{ secrets.FIREBASE_TOKEN }}' 
+          
+          # CORRECCIÓN CRÍTICA: Usamos el campo 'firebaseServiceAccount' 
+          # para pasar el valor del secreto 'FIREBASE_TOKEN'.
+          firebaseServiceAccount: '${{ secrets.FIREBASE_TOKEN }}' 
+          
           channelId: live
           projectId: masterparty-app-2025 # ¡ACTUALIZA ESTE CAMPO CON TU ID REAL!
           # El directorio público debe coincidir con lo configurado en firebase.json
