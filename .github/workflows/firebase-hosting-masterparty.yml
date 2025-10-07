@@ -5,7 +5,7 @@ on:
   push:
     branches:
       - main
-  # También puedes ejecutar el flujo manualmente si es necesario
+  # Permite ejecutar el flujo manualmente si es necesario
   workflow_dispatch:
 
 jobs:
@@ -36,9 +36,10 @@ jobs:
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-          # ID del proyecto de Firebase que creaste (ej: masterparty-app-2025)
+          # Token de GitHub para la acción (necesario por defecto)
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_MASTERPARTY_APP_2025 }}'
+          # CRÍTICO: Usamos el token de autenticación (FIREBASE_TOKEN) que creaste como Secreto en GitHub.
+          token: '${{ secrets.FIREBASE_TOKEN }}' 
           channelId: live
           projectId: masterparty-app-2025 # ¡ACTUALIZA ESTE CAMPO CON TU ID REAL!
           # El directorio público debe coincidir con lo configurado en firebase.json
