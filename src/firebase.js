@@ -30,8 +30,8 @@ if (missingKeys.length > 0) {
 export const appId = typeof __app_id !== 'undefined' ? __app_id : 'dev-app-id';
 export const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-export const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+export const app = initializeApp(firebaseConfig); // Initialize the Firebase App
+export const db = getFirestore(app, '(default)'); // Explicitly specify the default database ID
 export const auth = getAuth(app);
 export const analytics = getAnalytics(app);
 
