@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db, appId } from './firebase';
-import { Sparkles, User, Mail, Lock, Calendar, Users } from 'lucide-react';
+import { Sparkles, User, Mail, Lock, Calendar, Users, Phone, Eye, EyeOff } from 'lucide-react';
 
 const RegisterScreen = ({ onSwitchView }) => {
     const [formData, setFormData] = useState({
@@ -12,9 +12,11 @@ const RegisterScreen = ({ onSwitchView }) => {
         password: '',
         age: '',
         gender: 'Otro',
+        phoneNumber: '',
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -33,12 +35,13 @@ const RegisterScreen = ({ onSwitchView }) => {
             // 2. Crear el documento de perfil en Firestore
             const userDocRef = doc(db, `artifacts/${appId}/users/${newUser.uid}/profile/settings`);
             await setDoc(userDocRef, {
-                role: 'cliente', // Rol por defecto
+                roles: ['cliente'], // Rol inicial como un array
                 firstName: formData.firstName,
                 lastName: formData.lastName,
                 email: formData.email,
                 age: parseInt(formData.age, 10),
                 gender: formData.gender,
+                phoneNumber: formData.phoneNumber,
                 createdAt: Date.now(),
             });
 
@@ -84,7 +87,24 @@ const RegisterScreen = ({ onSwitchView }) => {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Contraseña</label>
-                        <input type="password" name="password" onChange={handleChange} required className="mt-1 w-full p-3 border border-gray-300 rounded-xl" />
+                        <div className="relative mt-1 group">
+                            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                            <input type={showPassword ? 'text' : 'password'} name="password" onChange={handleChange} required className="w-full pl-10 pr-10 p-3 border border-gray-300 rounded-xl" />
+                             <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            >
+                                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Número de Teléfono</label>
+                        <div className="relative mt-1">
+                            <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                            <input type="tel" name="phoneNumber" onChange={handleChange} required className="w-full pl-10 p-3 border border-gray-300 rounded-xl" />
+                        </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>

@@ -2,10 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+@layer base {
+  :root {
+    font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  }
+
+  body {
+    margin: 0;
+  }
 }
 
-body {
-  margin: 0;
+@layer components {
+  .cta-button {
+    @apply bg-gradient-to-r from-pink-500 to-violet-600 hover:from-pink-600 hover:to-violet-700 transition-all duration-300;
+  }
+  .modern-shadow {
+    box-shadow: 0 10px 25px -5px rgba(109, 40, 217, 0.1), 0 8px 10px -6px rgba(109, 40, 217, 0.1);
+  }
+  .hero-background {
+    background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
+  }
+  .horizontal-scroll-container {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .horizontal-scroll-container::-webkit-scrollbar {
+    display: none; /* Safari and Chrome */
+  }
 }

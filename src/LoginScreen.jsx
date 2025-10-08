@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from './firebase';
-import { Sparkles, Mail, Lock } from 'lucide-react';
+import { Sparkles, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
 const LoginScreen = ({ onSwitchView }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -52,7 +53,15 @@ const LoginScreen = ({ onSwitchView }) => {
                         <label className="block text-sm font-medium text-gray-700">Contraseña</label>
                         <div className="relative mt-1">
                             <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full pl-10 p-3 border border-gray-300 rounded-xl" />
+                            <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full pl-10 pr-10 p-3 border border-gray-300 rounded-xl" />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                            >
+                                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                            </button>
                         </div>
                     </div>
 

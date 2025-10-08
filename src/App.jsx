@@ -1,17 +1,21 @@
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc, onSnapshot, collection, addDoc, query, where } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Search, Sparkles, Menu, CalendarCheck, Briefcase, ShieldCheck, DollarSign, Building2, Utensils, Gift, Music, Camera, Sofa, Plus, MapPin, Tag, Euro, X, Trash2, Edit } from 'lucide-react';
+import { Search, Sparkles, Menu, CalendarCheck, Briefcase, ShieldCheck, DollarSign, Building2, Utensils, Gift, Music, Camera, Sofa, Plus, MapPin, Tag, Euro, X, Trash2, Edit, User, Users } from 'lucide-react';
 import { auth, db, appId } from './firebase';
 import LoginScreen from './LoginScreen.jsx';
 import RegisterScreen from './RegisterScreen.jsx';
+import AccountView from './AccountView.jsx';
+import AccountDisplayView from './AccountDisplayView.jsx';
+import BecomeProviderView from './BecomeProviderView.jsx';
+import VendorDashboardView from './VendorDashboard.jsx';
+import CategoryManagerPage from './CategoryManagerPage.jsx';
 
 // =====================================================================
 // 1. CONFIGURACIÓN INICIAL
 // =====================================================================
 
-// Lista de Categorías de Servicio
-const serviceCategories = ['Lugar', 'Catering', 'Mobiliario', 'Decoración', 'Música/DJ', 'Fotografía', 'Transporte', 'Otros'];
+// La lista de categorías ahora se carga dinámicamente desde Firestore en el componente App.
 
 // =====================================================================
 // 2. COMPONENTES DE VISTA ESPECÍFICOS
@@ -20,18 +24,19 @@ const serviceCategories = ['Lugar', 'Catering', 'Mobiliario', 'Decoración', 'M�
 /**
  * Vista de la página de inicio para el cliente. (Sin cambios mayores)
  */
-const ClientHomeView = ({ userId }) => {
+const ClientHomeView = ({ userId, serviceCategories }) => {
     // Hooks de estado para manejar la selección de filtros del cliente (Fecha y Tipo)
     const [eventDate, setEventDate] = useState('');
-    const [serviceType, setServiceType] = useState('');
+    const [mainCategory, setMainCategory] = useState('');
+    const [subCategory, setSubCategory] = useState('');
 
     // Maneja la acción de búsqueda
     const handleFormSubmit = (e) => {
         e.preventDefault();
-        alert(`Búsqueda simulada. Se buscaría en Firestore la disponibilidad para ${eventDate} y tipo: ${serviceType}.`);
+        alert(`Búsqueda simulada. Se buscaría en Firestore la disponibilidad para ${eventDate}, categoría: ${mainCategory}, servicio: ${subCategory}.`);
     };
 
-    const categories = serviceCategories.map(name => {
+    const categories = Object.keys(serviceCategories).map(name => {
         let icon;
         switch(name) {
             case 'Lugar': icon = Building2; break;
@@ -90,12 +95,30 @@ const ClientHomeView = ({ userId }) => {
                                 <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-violet-500 w-5 h-5" />
                                 <select 
                                     id="type-select" 
-                                    value={serviceType}
-                                    onChange={(e) => setServiceType(e.target.value)}
+                                    value={mainCategory}
+                                    onChange={(e) => { setMainCategory(e.target.value); setSubCategory(''); }}
                                     className="w-full pl-10 p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition text-gray-800 appearance-none h-12"
                                 >
-                                    <option value="">Todos los servicios</option>
-                                    {serviceCategories.map(cat => <option key={cat}>{cat}</option>)}
+                                    <option value="">Categorías</option>
+                                    {Object.keys(serviceCategories).map(cat => <option key={cat}>{cat}</option>)}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Campo Sub-Categoría */}
+                        <div className="md:col-span-1">
+                            <label htmlFor="subtype-select" className="block text-xs font-bold uppercase text-gray-600 text-left mb-1">Servicio</label>
+                            <div className="relative">
+                                <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 text-violet-500 w-5 h-5" />
+                                <select 
+                                    id="subtype-select" 
+                                    value={subCategory}
+                                    onChange={(e) => setSubCategory(e.target.value)}
+                                    disabled={!mainCategory}
+                                    className="w-full pl-10 p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition text-gray-800 appearance-none h-12 disabled:bg-gray-100"
+                                >
+                                    <option value="">Todos</option>
+                                    {(serviceCategories[mainCategory] || []).map(sub => <option key={sub}>{sub}</option>)}
                                 </select>
                             </div>
                         </div>
@@ -118,7 +141,7 @@ const ClientHomeView = ({ userId }) => {
             <section className="py-12 max-w-7xl mx-auto px-0 sm:px-6 lg:px-8">
                 <h2 className="text-xl font-extrabold text-gray-900 mb-6 px-4 sm:px-0">Explora por Categoría</h2>
                 
-                <div className="flex space-x-4 px-4 overflow-x-auto horizontal-scroll-container sm:grid sm:grid-cols-3 lg:grid-cols-6 sm:space-x-0 sm:gap-6">
+                <div className="flex space-x-4 px-4 pb-4 overflow-x-auto horizontal-scroll-container sm:grid sm:grid-cols-3 lg:grid-cols-6 sm:space-x-0 sm:gap-6">
                     {categories.map((cat) => (
                         <div 
                             key={cat.name}
@@ -162,302 +185,6 @@ const ClientHomeView = ({ userId }) => {
     );
 };
 
-// --- Sub-Componentes del Prestador ---
-
-/**
- * Formulario para crear o editar un servicio.
- */
-const ServiceForm = ({ userId, onServiceAdded }) => {
-    const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
-    const [price, setPrice] = useState('');
-    const [type, setType] = useState(serviceCategories[0]);
-    const [zone, setZone] = useState('');
-    const [loading, setLoading] = useState(false);
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!db || !userId) return;
-
-        setLoading(true);
-        try {
-            const newService = {
-                vendorId: userId,
-                name,
-                description,
-                price: parseFloat(price),
-                type,
-                zone,
-                createdAt: Date.now(),
-            };
-
-            // Guardar el servicio en la colección pública de servicios
-            const servicesRef = collection(db, `artifacts/${appId}/public/data/services`);
-            await addDoc(servicesRef, newService);
-
-            // Limpiar formulario y notificar
-            alert('¡Servicio Publicado con éxito!');
-            setName('');
-            setDescription('');
-            setPrice('');
-            setZone('');
-            
-            if (onServiceAdded) onServiceAdded();
-
-        } catch (error) {
-            console.error("Error al publicar el servicio:", error);
-            alert(`Error al publicar: ${error.message}`);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <div className="bg-white p-6 rounded-xl modern-shadow border border-violet-200">
-            <h2 className="text-2xl font-black text-violet-700 mb-4 flex items-center gap-2">
-                <Plus className="w-6 h-6 text-pink-500" /> Publicar Nuevo Servicio
-            </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Nombre del Servicio */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Nombre del Servicio</label>
-                    <input 
-                        type="text" 
-                        value={name} 
-                        onChange={(e) => setName(e.target.value)} 
-                        required 
-                        className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-3 border"
-                    />
-                </div>
-
-                {/* Descripción */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Descripción Detallada</label>
-                    <textarea 
-                        value={description} 
-                        onChange={(e) => setDescription(e.target.value)} 
-                        required 
-                        rows="3"
-                        className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-3 border"
-                    ></textarea>
-                </div>
-
-                {/* Fila de Tipo, Precio y Zona */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Tipo de Servicio */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 flex items-center gap-1"><Tag className="w-4 h-4 text-violet-500" /> Tipo</label>
-                        <select 
-                            value={type} 
-                            onChange={(e) => setType(e.target.value)} 
-                            className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-3 border"
-                        >
-                            {serviceCategories.map(cat => (
-                                <option key={cat} value={cat}>{cat}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Precio Base */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 flex items-center gap-1"><Euro className="w-4 h-4 text-violet-500" /> Precio Base (USD/MXN)</label>
-                        <input 
-                            type="number" 
-                            value={price} 
-                            onChange={(e) => setPrice(e.target.value)} 
-                            required 
-                            min="0"
-                            className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-3 border"
-                        />
-                    </div>
-
-                    {/* Zona/Ubicación */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 flex items-center gap-1"><MapPin className="w-4 h-4 text-violet-500" /> Zona de Servicio</label>
-                        <input 
-                            type="text" 
-                            value={zone} 
-                            onChange={(e) => setZone(e.target.value)} 
-                            required 
-                            placeholder="Ej: Zona Norte, Centro Histórico"
-                            className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-3 border"
-                        />
-                    </div>
-                </div>
-
-                {/* Botón de Publicar */}
-                <button 
-                    type="submit" 
-                    disabled={loading}
-                    className="cta-button w-full text-white font-bold py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 disabled:bg-pink-300 disabled:cursor-not-allowed transition"
-                >
-                    {loading ? (
-                        <>
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                            Publicando...
-                        </>
-                    ) : (
-                        <>
-                            <Plus className="w-5 h-5" />
-                            Publicar Servicio
-                        </>
-                    )}
-                </button>
-            </form>
-        </div>
-    );
-};
-
-/**
- * Muestra la lista de servicios publicados por el Prestador.
- */
-const ServiceList = ({ userId }) => {
-    const [services, setServices] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        if (!db || !userId) return;
-
-        // Definir la ruta de la colección pública de servicios
-        const servicesCollectionRef = collection(db, `artifacts/${appId}/public/data/services`);
-        
-        // Crear una consulta para obtener solo los servicios del usuario actual
-        // Necesita un índice compuesto en Firestore: vendorId (asc) y createdAt (desc)
-        const q = query(
-            servicesCollectionRef, 
-            where("vendorId", "==", userId)
-            // En una app real, aquí se usaría orderBy('createdAt', 'desc')
-        );
-
-        // Suscribirse a los cambios en tiempo real
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const fetchedServices = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            
-            // Ordenar en el cliente (para evitar el error de índice de orderBy en este entorno)
-            fetchedServices.sort((a, b) => b.createdAt - a.createdAt);
-            
-            setServices(fetchedServices);
-            setLoading(false);
-        }, (error) => {
-            console.error("Error al obtener servicios:", error);
-            setLoading(false);
-        });
-
-        return () => unsubscribe();
-    }, [userId]);
-
-    // Función para manejar la eliminación (placeholder)
-    const handleDelete = (serviceId, serviceName) => {
-        // Usamos window.confirm en lugar de confirm() o alert() para evitar problemas en el entorno de iframe
-        if (window.confirm(`¿Estás seguro de que quieres eliminar el servicio: ${serviceName}?`)) {
-            // Se debe usar un modal personalizado en lugar de window.confirm() en un entorno de producción
-            alert(`Simulando eliminación del servicio: ${serviceId}. Esto sería un deleteDoc() en Firestore.`);
-            // Implementación futura: await deleteDoc(doc(db, servicesCollectionRef, serviceId));
-        }
-    };
-    
-    // Función para manejar la edición (placeholder)
-    const handleEdit = (service) => {
-         alert(`Simulando edición del servicio: ${service.name}. Esto abriría el formulario de edición.`);
-    };
-
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center py-10 text-gray-600">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-500 mr-3"></div>
-                Cargando tus servicios...
-            </div>
-        );
-    }
-
-    return (
-        <div className="mt-8">
-            <h2 className="text-2xl font-black text-violet-700 mb-4">
-                Tus Publicaciones ({services.length})
-            </h2>
-            
-            {services.length === 0 ? (
-                <div className="p-6 bg-yellow-50 border border-yellow-200 rounded-xl text-yellow-800 text-center">
-                    Aún no tienes servicios publicados. ¡Usa el formulario de arriba para empezar!
-                </div>
-            ) : (
-                <div className="space-y-4">
-                    {services.map(service => (
-                        <div key={service.id} className="bg-white p-4 rounded-xl border border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center modern-shadow">
-                            <div className="flex-grow mb-3 sm:mb-0">
-                                <h3 className="font-bold text-lg text-violet-800">{service.name}</h3>
-                                <p className="text-sm text-gray-600 flex items-center gap-1">
-                                    <Tag className="w-4 h-4 text-pink-500" /> {service.type} - 
-                                    <MapPin className="w-4 h-4 text-pink-500 ml-2" /> {service.zone}
-                                </p>
-                                <p className="text-xl font-extrabold text-pink-600 mt-1">${service.price}</p>
-                            </div>
-                            <div className="flex space-x-2">
-                                {/* Botones de acción */}
-                                <button 
-                                    onClick={() => handleEdit(service)}
-                                    className="p-2 bg-violet-100 text-violet-600 rounded-full hover:bg-violet-200 transition"
-                                >
-                                    <Edit className="w-5 h-5" />
-                                </button>
-                                <button 
-                                    onClick={() => handleDelete(service.id, service.name)}
-                                    className="p-2 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition"
-                                >
-                                    <Trash2 className="w-5 h-5" />
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-};
-
-
-/**
- * Vista principal para el Prestador de Servicios.
- */
-const VendorDashboardView = ({ userId }) => {
-    // Estado para forzar la recarga de la lista después de añadir un servicio
-    const [refreshKey, setRefreshKey] = useState(0); 
-
-    const forceRefresh = useCallback(() => {
-        setRefreshKey(prev => prev + 1);
-    }, []);
-    
-    return (
-        <div className="p-4 sm:p-8 max-w-5xl mx-auto min-h-screen bg-gray-50">
-            <h1 className="text-3xl font-bold text-violet-800 mb-6 flex items-center gap-2">
-                <Briefcase className="w-7 h-7 text-pink-500" /> Panel del Prestador
-            </h1>
-            <p className="text-gray-600 mb-6">Tu control maestro para gestionar servicios y disponibilidad.</p>
-            
-            {/* Formulario de Nuevo Servicio */}
-            <ServiceForm userId={userId} onServiceAdded={forceRefresh} />
-            
-            {/* Gestión de Disponibilidad (PRÓXIMO PASO) */}
-            <div className="mt-8 p-6 bg-white rounded-xl modern-shadow border-t-4 border-pink-500">
-                 <h2 className="text-2xl font-black text-pink-700 mb-4 flex items-center gap-2">
-                    <CalendarCheck className="w-6 h-6" /> Calendario y Disponibilidad
-                </h2>
-                <p className="text-gray-700">
-                    <span className="font-bold text-violet-600">PRÓXIMO PASO CRÍTICO:</span> Aquí implementaremos la interfaz de calendario para que puedas **bloquear fechas** y asegurar que los clientes solo vean tus servicios cuando estás disponible.
-                </p>
-            </div>
-
-            {/* Listado de Servicios */}
-            <ServiceList userId={userId} key={refreshKey} />
-            
-        </div>
-    );
-};
-
-
 /**
  * Vista de Bienvenida/Login simple.
  */
@@ -478,8 +205,11 @@ const LandingView = () => (
 export default function App() {
     const [user, setUser] = useState(null);
     const [isAuthReady, setIsAuthReady] = useState(false);
-    const [userRole, setUserRole] = useState('cliente'); // Estado para simular el rol
+    const [userRoles, setUserRoles] = useState([]); // Almacena todos los roles del usuario
+    const [activeRole, setActiveRole] = useState('cliente'); // El rol/vista que el usuario está usando
     const [authView, setAuthView] = useState('login'); // 'login' o 'register'
+    const [serviceCategories, setServiceCategories] = useState({}); // Categorías de servicio dinámicas
+    const [activeView, setActiveView] = useState('dashboard'); // 'dashboard', 'accountDisplay', 'accountEdit', 'becomeProvider', 'manageCategories'
 
     const userId = user?.uid || 'guest';
 
@@ -488,7 +218,7 @@ export default function App() {
     // ----------------------------------------------------
     useEffect(() => {
         if (!auth) {
-            console.error("Firebase Auth no está inicializado.", initialAuthToken); // Se mantiene initialAuthToken para evitar errores si se usa en otro lado.
+            console.error("Firebase Auth no está inicializado.");
             setIsAuthReady(true);
             return;
         }
@@ -497,29 +227,62 @@ export default function App() {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             setUser(currentUser);
             if (currentUser) {
-                // Cargar el rol del usuario de Firestore o establecer un valor por defecto
+                // Cargar los roles del usuario de Firestore
                 try {
-                    // Ruta de perfil privada: /artifacts/{appId}/users/{userId}/profile/settings
                     const userDocRef = doc(db, `artifacts/${appId}/users/${currentUser.uid}/profile/settings`);
                     const docSnap = await getDoc(userDocRef);
                     
-                    if (docSnap.exists() && docSnap.data().role) {
-                        setUserRole(docSnap.data().role);
+                    if (docSnap.exists() && docSnap.data().roles) {
+                        const roles = docSnap.data().roles;
+                        setUserRoles(roles);
+                        // Mantiene el rol activo si es válido, si no, vuelve a cliente
+                        setActiveRole(prevActiveRole => roles.includes(prevActiveRole) ? prevActiveRole : 'cliente');
                     } else {
-                        // Esto es un fallback, el registro ya debería haber creado el perfil.
-                        // Podría ser útil si un usuario se crea desde el backend de Firebase.
-                        await setDoc(userDocRef, { role: 'cliente', createdAt: Date.now() }, { merge: true });
-                        setUserRole('cliente');
+                        // Fallback si el perfil no existe (no debería pasar con el flujo actual)
+                        await setDoc(userDocRef, { roles: ['cliente'], createdAt: Date.now() }, { merge: true });
+                        setUserRoles(['cliente']);
+                        setActiveRole('cliente');
                     }
                 } catch (e) {
-                    console.error("Error al obtener/establecer el rol del usuario:", e);
+                    console.error("Error al obtener/establecer los roles del usuario:", e);
+                    setUserRoles(['cliente']); // Fallback a cliente en caso de error
+                    setActiveRole('cliente');
                 }
+            } else {
+                // Resetear estados al cerrar sesión
+                setUserRoles([]);
+                setActiveRole('cliente');
             }
             setIsAuthReady(true);
         });
 
+        return () => unsubscribe(); // Se ejecuta al desmontar el componente
+    }, []); // Este efecto solo debe correr una vez al montar el componente
+
+    // ----------------------------------------------------
+    // Efecto 2: Carga de Categorías de Servicio
+    // ----------------------------------------------------
+    useEffect(() => {
+        const publicDataDocRef = doc(db, `artifacts/${appId}/public/data`);
+
+        const unsubscribe = onSnapshot(publicDataDocRef, (docSnap) => {
+            if (docSnap.exists() && typeof docSnap.data().service_categories === 'object') {
+                setServiceCategories(docSnap.data().service_categories);
+            }
+        }, (error) => {
+            console.error("Error al cargar las categorías de servicio:", error);
+        });
+
         return () => unsubscribe();
     }, []);
+
+    // Efecto para resetear la vista cuando el usuario cierra sesión
+    useEffect(() => {
+        if (!user) {
+            setActiveView('dashboard'); // Resetea a la vista principal al salir
+            setActiveRole('cliente');
+        }
+    }, [user]);
 
 
     // ----------------------------------------------------
@@ -539,58 +302,46 @@ export default function App() {
         }
     }
 
+    const handleSwitchToProviderView = () => {
+        setActiveRole('prestador');
+        setActiveView('dashboard'); // Ir directamente al dashboard del proveedor
+    };
+
     const renderContent = () => {
-        switch (userRole) {
+        if (activeView === 'accountDisplay') {
+            return <AccountDisplayView 
+                        userId={userId} 
+                        onBack={() => setActiveView('dashboard')} 
+                        onEdit={() => setActiveView('accountEdit')} 
+                        onBecomeProvider={() => setActiveView('becomeProvider')}
+                        onSwitchToProviderView={handleSwitchToProviderView}
+                    />;
+        }
+        if (activeView === 'accountEdit') {
+            return <AccountView userId={userId} onBack={() => setActiveView('accountDisplay')} />;
+        }
+        if (activeView === 'becomeProvider') {
+            return <BecomeProviderView userId={userId} onBack={() => setActiveView('accountDisplay')} />;
+        }
+        if (activeView === 'manageCategories') {
+            return <CategoryManagerPage onBack={() => setActiveView('dashboard')} />;
+        }
+
+        switch (activeRole) {
             case 'cliente':
-                return <ClientHomeView userId={userId} />;
+                return <ClientHomeView userId={userId} serviceCategories={serviceCategories} />;
             case 'prestador':
-                return <VendorDashboardView userId={userId} />;
+                return <VendorDashboardView userId={userId} onSwitchToClientView={() => setActiveRole('cliente')} serviceCategories={serviceCategories} onManageCategories={() => setActiveView('manageCategories')} />;
             case 'admin':
                 // Implementación futura del panel de Admin
-                return <VendorDashboardView userId={userId} />;
+                return <VendorDashboardView userId={userId} onSwitchToClientView={() => setActiveRole('cliente')} serviceCategories={serviceCategories} onManageCategories={() => setActiveView('manageCategories')} />;
             default:
-                return <ClientHomeView userId={userId} />;
+                return <ClientHomeView userId={userId} serviceCategories={serviceCategories} />;
         }
     };
 
     return (
         <div className="font-sans">
-            {/* ESTILOS GLOBALES MOBILE-FIRST */}
-            {/* FIX: Se eliminan los atributos 'jsx' y 'global' del tag <style> para evitar warnings de React en entornos no-styled-jsx. */}
-            <style>{`
-                /* Fuente Inter y fondo */
-                body {
-                    font-family: 'Inter', sans-serif;
-                    background-color: #fcfcfd;
-                }
-                /* Degradado del Hero (Violeta y Rosa) */
-                .hero-background {
-                    background: linear-gradient(135deg, rgba(109, 40, 217, 0.95) 0%, rgba(139, 92, 246, 0.95) 100%), url('https://placehold.co/1200x400/6D28D9/FFFFFF?text=Fondo+MasterParty') center center/cover;
-                    background-blend-mode: multiply;
-                }
-                /* Sombra suave y moderna (Material Suave) */
-                .modern-shadow {
-                    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
-                }
-                /* Botón CTA (Rosa Vibrante) */
-                .cta-button {
-                    background-color: #EC4899; 
-                    transition: background-color 0.3s, transform 0.2s;
-                }
-                .cta-button:hover {
-                    background-color: #DB2777;
-                    transform: scale(1.01); 
-                }
-                /* Ocultar barra de desplazamiento para categorías en móvil */
-                .horizontal-scroll-container::-webkit-scrollbar {
-                    display: none;
-                }
-                .horizontal-scroll-container {
-                    -ms-overflow-style: none;
-                    scrollbar-width: none;
-                }
-            `}</style>
-            
             {/* Barra de Navegación */}
             <nav className="bg-white border-b border-gray-100 p-3 sticky top-0 z-20">
                 <div className="max-w-7xl mx-auto flex justify-between items-center">
@@ -600,20 +351,17 @@ export default function App() {
                         MasterParty
                     </div>
                     
-                    {/* Selector de Rol (Herramienta de Desarrollo) */}
+                    {/* Acciones de Usuario */}
                     <div className="flex items-center space-x-4">
-                        <select 
-                            value={userRole} 
-                            onChange={(e) => setUserRole(e.target.value)} 
-                            className="text-sm bg-violet-100 text-violet-700 font-semibold rounded-lg p-2 border border-violet-300"
+                        <button
+                            onClick={() => setActiveView('accountDisplay')}
+                            className="bg-violet-100 hover:bg-violet-200 text-violet-700 px-3 py-1.5 rounded-xl shadow-md font-semibold text-sm hidden sm:flex items-center gap-2"
                         >
-                            <option value="cliente">Cliente</option>
-                            <option value="prestador">Prestador</option>
-                            <option value="admin">Admin</option>
-                        </select>
+                            <User className="w-4 h-4" />
+                            Mi Cuenta
+                        </button>
                         
-                        {/* Botón de Acceder/Menú */}
-                        <button 
+                        <button
                             onClick={() => signOut(auth)}
                             className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-xl shadow-md font-semibold text-sm hidden sm:block"
                         >
