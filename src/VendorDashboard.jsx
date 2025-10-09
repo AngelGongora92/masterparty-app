@@ -464,7 +464,7 @@ const ServiceList = ({ userId }) => {
 /**
  * Vista principal para el Prestador de Servicios.
  */
-const VendorDashboardView = ({ userId, onSwitchToClientView, serviceCategories, onManageCategories }) => {
+const VendorDashboardView = ({ userId, serviceCategories, onSwitchToClientView }) => {
     // Estado para forzar la recarga de la lista después de añadir un servicio
     const [refreshKey, setRefreshKey] = useState(0); 
 
@@ -478,9 +478,6 @@ const VendorDashboardView = ({ userId, onSwitchToClientView, serviceCategories, 
                 <h1 className="text-3xl font-bold text-violet-800 flex items-center gap-2">
                     <Briefcase className="w-7 h-7 text-pink-500" /> Panel del Prestador
                 </h1>
-                <button onClick={onSwitchToClientView} className="bg-gray-200 text-gray-800 font-semibold px-4 py-2 rounded-lg hover:bg-gray-300">
-                    Cambiar a Modo Cliente
-                </button>
             </div>
             <p className="text-gray-600 mb-6">Tu control maestro para gestionar servicios y disponibilidad.</p>
             
@@ -500,13 +497,6 @@ const VendorDashboardView = ({ userId, onSwitchToClientView, serviceCategories, 
             {/* Formulario de Nuevo Servicio */}
             <div className="mt-8">
                 <ServiceForm userId={userId} onServiceAdded={forceRefresh} serviceCategories={serviceCategories} />
-            </div>
-
-            {/* Botón para Gestión de Categorías (Admin) */}
-            <div className="mt-8 text-center">
-                <button onClick={onManageCategories} className="bg-gray-700 text-white font-semibold px-6 py-3 rounded-xl hover:bg-gray-800 transition-colors flex items-center gap-2 mx-auto">
-                    <Settings className="w-5 h-5" /> Gestionar Categorías (Admin)
-                </button>
             </div>
             
         </div>

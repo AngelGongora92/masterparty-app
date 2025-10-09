@@ -130,7 +130,7 @@ const RegisterScreen = ({ onSwitchView }) => {
 
                 <p className="text-center text-sm text-gray-600 mt-6">
                     ¿Ya tienes una cuenta?{' '}
-                    <button onClick={() => onSwitchView('login')} className="font-semibold text-violet-600 hover:underline">
+                    <button onClick={onSwitchView} className="font-semibold text-violet-600 hover:underline">
                         Inicia sesión
                     </button>
                 </p>
