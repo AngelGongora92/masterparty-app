@@ -74,7 +74,7 @@ const LoginScreen = ({ onSwitchView }) => {
 
                 <p className="text-center text-sm text-gray-600 mt-6">
                     ¿No tienes una cuenta?{' '}
-                    <button onClick={() => onSwitchView('register')} className="font-semibold text-violet-600 hover:underline">
+                    <button onClick={onSwitchView} className="font-semibold text-violet-600 hover:underline">
                         Regístrate aquí
                     </button>
                 </p>

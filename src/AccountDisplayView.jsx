@@ -13,7 +13,7 @@ const InfoRow = ({ icon: Icon, label, value }) => (
     </div>
 );
 
-const AccountDisplayView = ({ userId, onBack, onEdit, onBecomeProvider, onSwitchToProviderView }) => {
+const AccountDisplayView = ({ userId, onBack, onEdit, onBecomeProvider }) => {
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -73,17 +73,6 @@ const AccountDisplayView = ({ userId, onBack, onEdit, onBecomeProvider, onSwitch
                         Actualizar
                     </button>
                 </div>
-
-                {/* Botón para cambiar a Panel de Proveedor */}
-                {userData.roles && userData.roles.includes('prestador') && (
-                    <button
-                        onClick={onSwitchToProviderView}
-                        className="w-full bg-violet-600 text-white font-bold py-3 rounded-xl shadow-lg flex justify-center items-center gap-2 mb-6 hover:bg-violet-700 transition"
-                    >
-                        <Briefcase className="w-5 h-5" />
-                        Panel de Proveedor
-                    </button>
-                )}
 
                 <div className="space-y-2">
                     <InfoRow
