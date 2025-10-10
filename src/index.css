@@ -31,12 +31,11 @@
   }
 }
 
-/* Estilos personalizados para react-calendar */
 @layer components {
+  /* Estilos personalizados para react-calendar */
   .calendar-container .react-calendar {
     @apply w-full border-2 border-gray-200 rounded-xl p-2 bg-white;
   }
-
   /* Navegación del mes */
   .calendar-container .react-calendar__navigation button {
     @apply font-bold text-violet-700 hover:bg-violet-100 rounded-lg;
@@ -47,7 +46,6 @@
   .calendar-container .react-calendar__navigation__label {
     @apply font-extrabold text-lg text-violet-800;
   }
-
   /* Nombres de los días de la semana */
   .calendar-container .react-calendar__month-view__weekdays__weekday {
     @apply text-center font-bold text-sm text-pink-600 uppercase pb-2;
@@ -55,12 +53,10 @@
   .calendar-container .react-calendar__month-view__weekdays__weekday abbr {
     @apply no-underline;
   }
-
   /* Estilo base de cada día (tile) */
   .calendar-container .react-calendar__tile {
     @apply text-center p-3 rounded-lg border-2 border-transparent transition-colors duration-200;
   }
-
   /* Día de hoy */
   .calendar-container .react-calendar__tile--now {
     @apply bg-violet-50 text-violet-700 font-bold;
@@ -68,15 +64,53 @@
   .calendar-container .react-calendar__tile--now:hover {
     @apply bg-violet-100;
   }
-
   /* Días fuera del mes actual */
   .calendar-container .react-calendar__month-view__days__day--neighboringMonth {
     @apply text-gray-300;
   }
-
   /* Día seleccionado como "No disponible" */
   .unavailable-day {
     @apply bg-red-500 text-white font-bold line-through rounded-lg !important;
     @apply hover:bg-red-600 !important;
+  }
+  
+  /* Estilos personalizados para react-big-calendar */
+  /* Barra de herramientas superior */
+  .rbc-toolbar {
+    @apply mb-4 flex flex-wrap items-center gap-y-2;
+  }
+  .rbc-toolbar .rbc-toolbar-label {
+    @apply text-xl font-bold text-violet-800 flex-grow text-center md:text-left;
+  }
+  .rbc-toolbar .rbc-btn-group {
+    @apply flex items-center gap-1 bg-gray-100 p-1 rounded-lg;
+  }
+  .rbc-toolbar button {
+    @apply px-3 py-1.5 rounded-md border-none text-sm font-semibold text-gray-600 cursor-pointer transition-colors;
+  }
+  .rbc-toolbar button:hover {
+    @apply bg-gray-200;
+  }
+  .rbc-toolbar .rbc-active {
+    @apply bg-violet-600 text-white shadow-md;
+  }
+  .rbc-toolbar .rbc-active:hover {
+    @apply bg-violet-700;
+  }
+  /* Encabezados de día/fecha */
+  .rbc-header {
+    @apply text-center p-2 border-b-2 border-gray-200 font-semibold text-gray-600;
+  }
+  .rbc-header + .rbc-header,
+  .rbc-day-bg + .rbc-day-bg {
+    @apply border-l-2 border-gray-200;
+  }
+  /* Eventos (bloqueos) */
+  .rbc-event {
+    @apply bg-pink-500 border-none p-1 rounded-md text-white text-xs;
+  }
+  /* Slot de tiempo seleccionado (al arrastrar) */
+  .rbc-slot-selection {
+    @apply bg-violet-500 bg-opacity-50;
   }
 }

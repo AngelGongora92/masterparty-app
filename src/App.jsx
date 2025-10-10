@@ -11,6 +11,10 @@ import BecomeProviderView from './components/account/BecomeProviderView.jsx';
 import VendorDashboardView from './components/vendor/VendorDashboard.jsx';
 import CategoryManagerPage from './components/admin/CategoryManagerPage.jsx';
 import AdminPanel from './components/admin/AdminPanel.jsx';
+import ClientHomeView from './components/client/ClientHomeView.jsx';
+import FullCalendarManager from './components/vendor/FullCalendarManager.jsx';
+import SearchResultsView from './components/client/SearchResultsView.jsx';
+import ServiceDetailModal from './components/client/ServiceDetailModal.jsx';
 
 // =====================================================================
 // 1. CONFIGURACIÓN INICIAL
@@ -21,170 +25,6 @@ import AdminPanel from './components/admin/AdminPanel.jsx';
 // =====================================================================
 // 2. COMPONENTES DE VISTA ESPECÍFICOS
 // =====================================================================
-
-/**
- * Vista de la página de inicio para el cliente. (Sin cambios mayores)
- */
-const ClientHomeView = ({ userId, serviceCategories }) => {
-    // Hooks de estado para manejar la selección de filtros del cliente (Fecha y Tipo)
-    const [eventDate, setEventDate] = useState('');
-    const [mainCategory, setMainCategory] = useState('');
-    const [subCategory, setSubCategory] = useState('');
-
-    // Maneja la acción de búsqueda
-    const handleFormSubmit = (e) => {
-        e.preventDefault();
-        alert(`Búsqueda simulada. Se buscaría en Firestore la disponibilidad para ${eventDate}, categoría: ${mainCategory}, servicio: ${subCategory}.`);
-    };
-
-    const categories = Object.keys(serviceCategories).map(name => {
-        let icon;
-        switch(name) {
-            case 'Lugar': icon = Building2; break;
-            case 'Catering': icon = Utensils; break;
-            case 'Mobiliario': icon = Sofa; break;
-            case 'Decoración': icon = Gift; break;
-            case 'Música/DJ': icon = Music; break;
-            case 'Fotografía': icon = Camera; break;
-            default: icon = Briefcase;
-        }
-        return { name, icon };
-    });
-
-    return (
-        <div className="min-h-screen">
-            {/* Sección Principal (Hero Compacto) */}
-            <header className="hero-background pt-12 pb-16 sm:pt-20 sm:pb-32 text-white">
-                <div className="max-w-5xl mx-auto text-center px-4">
-                    <h1 className="text-3xl sm:text-5xl font-extrabold leading-tight mb-6 tracking-tight">
-                        El Control Maestro de tu Celebración
-                    </h1>
-                    <p className="text-base sm:text-xl font-light opacity-95">
-                        Proveedor de élite con disponibilidad confirmada.
-                    </p>
-                </div>
-            </header>
-
-            {/* Tarjeta de Búsqueda (CRÍTICA) */}
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 transform -translate-y-12">
-                <div className="bg-white p-6 sm:p-8 rounded-2xl modern-shadow w-full border-2 border-pink-500/20">
-                    <h3 className="text-gray-900 text-xl font-black mb-4 text-left">Busca por Fecha y Servicio</h3>
-                    
-                    <form onSubmit={handleFormSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        {/* Campo Fecha (CRÍTICO) */}
-                        <div className="md:col-span-2">
-                            <label htmlFor="date-input" className="block text-xs font-bold uppercase text-gray-600 text-left mb-1">Fecha de tu Evento</label>
-                            <div className="relative">
-                                <CalendarCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 text-violet-500 w-5 h-5" />
-                                <input
-                                    type={eventDate ? "date" : "text"}
-                                    id="date-input"
-                                    value={eventDate}
-                                    onChange={(e) => setEventDate(e.target.value)}
-                                    onFocus={(e) => e.target.type = 'date'}
-                                    onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
-                                    placeholder="Todas las fechas"
-                                    className="w-full pl-10 p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition text-gray-800 h-12"
-                                />
-                            </div>
-                        </div>
-                        
-                        {/* Campo Tipo de Servicio */}
-                        <div className="md:col-span-1">
-                            <label htmlFor="type-select" className="block text-xs font-bold uppercase text-gray-600 text-left mb-1">Tipo de Servicio</label>
-                            <div className="relative">
-                                <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-violet-500 w-5 h-5" />
-                                <select 
-                                    id="type-select" 
-                                    value={mainCategory}
-                                    onChange={(e) => { setMainCategory(e.target.value); setSubCategory(''); }}
-                                    className="w-full pl-10 p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition text-gray-800 appearance-none h-12"
-                                >
-                                    <option value="">Categorías</option>
-                                    {Object.keys(serviceCategories).map(cat => <option key={cat}>{cat}</option>)}
-                                </select>
-                            </div>
-                        </div>
-
-                        {/* Campo Sub-Categoría */}
-                        <div className="md:col-span-1">
-                            <label htmlFor="subtype-select" className="block text-xs font-bold uppercase text-gray-600 text-left mb-1">Servicio</label>
-                            <div className="relative">
-                                <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 text-violet-500 w-5 h-5" />
-                                <select 
-                                    id="subtype-select" 
-                                    value={subCategory}
-                                    onChange={(e) => setSubCategory(e.target.value)}
-                                    disabled={!mainCategory}
-                                    className="w-full pl-10 p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition text-gray-800 appearance-none h-12 disabled:bg-gray-100"
-                                >
-                                    <option value="">Todos</option>
-                                    {(serviceCategories[mainCategory] || []).map(sub => <option key={sub}>{sub}</option>)}
-                                </select>
-                            </div>
-                        </div>
-                        
-                        {/* Botón de Búsqueda */}
-                        <div className="md:col-span-1 flex items-end mt-2 md:mt-0">
-                            <button type="submit" className="cta-button w-full text-white font-bold py-3 rounded-xl shadow-xl flex justify-center items-center gap-2 h-12">
-                                <Search className="w-5 h-5" />
-                                Buscar
-                            </button>
-                        </div>
-                    </form>
-                    <p className="text-xs text-gray-500 mt-3 text-right italic">
-                        ID de Usuario: {userId}
-                    </p>
-                </div>
-            </div>
-
-            {/* Sección de Categorías Destacadas */}
-            <section className="py-12 max-w-7xl mx-auto px-0 sm:px-6 lg:px-8">
-                <h2 className="text-xl font-extrabold text-gray-900 mb-6 px-4 sm:px-0">Explora por Categoría</h2>
-                
-                <div className="flex space-x-4 px-4 pb-4 overflow-x-auto horizontal-scroll-container sm:grid sm:grid-cols-3 lg:grid-cols-6 sm:space-x-0 sm:gap-6">
-                    {categories.map((cat) => (
-                        <div 
-                            key={cat.name}
-                            onClick={() => alert(`Simulando búsqueda por categoría: ${cat.name}`)}
-                            className="category-card flex-shrink-0 w-[120px] sm:w-auto text-center p-4 bg-white rounded-xl border border-gray-200 modern-shadow hover:shadow-xl transition duration-300 cursor-pointer transform hover:-translate-y-1"
-                        >
-                            <cat.icon className="w-8 h-8 mx-auto mb-2 text-violet-600" />
-                            <p className="font-bold text-gray-800 text-sm">{cat.name}</p>
-                        </div>
-                    ))}
-                </div>
-            </section>
-
-            {/* Sección de Beneficios */}
-            <section className="bg-gray-50 py-12">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <h2 className="text-xl font-extrabold text-gray-900 mb-8 text-center">Nuestras Ventajas MasterParty</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {/* Beneficio 1 */}
-                        <div className="bg-white p-6 rounded-xl modern-shadow border-t-4 border-violet-500 text-center">
-                            <CalendarCheck className="w-8 h-8 mx-auto text-violet-600 mb-3" />
-                            <h3 className="text-lg font-bold text-gray-800 mb-1">Disponibilidad en Vivo</h3>
-                            <p className="text-sm text-gray-600">Filtra servicios que realmente están libres para tu fecha.</p>
-                        </div>
-                        {/* Beneficio 2 */}
-                        <div className="bg-white p-6 rounded-xl modern-shadow border-t-4 border-violet-500 text-center">
-                            <ShieldCheck className="w-8 h-8 mx-auto text-violet-600 mb-3" />
-                            <h3 className="text-lg font-bold text-gray-800 mb-1">Garantía de Calidad</h3>
-                            <p className="text-sm text-gray-600">Solo proveedores pre-aprobados y verificados.</p>
-                        </div>
-                        {/* Beneficio 3 */}
-                        <div className="bg-white p-6 rounded-xl modern-shadow border-t-4 border-violet-500 text-center">
-                            <DollarSign className="w-8 h-8 mx-auto text-violet-600 mb-3" />
-                            <h3 className="text-lg font-bold text-gray-800 mb-1">Precios sin Sorpresas</h3>
-                            <p className="text-sm text-gray-600">Compara tarifas finales de forma transparente.</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </div>
-    );
-};
 
 /**
  * Vista de Bienvenida/Login simple.
@@ -212,6 +52,7 @@ export default function App() {
     const [authView, setAuthView] = useState('login'); // 'login' o 'register'
     const [serviceCategories, setServiceCategories] = useState({}); // Categorías de servicio dinámicas
     const [activeView, setActiveView] = useState('dashboard'); // 'dashboard', 'accountDisplay', 'accountEdit', 'becomeProvider', 'manageCategories'
+    const [searchResults, setSearchResults] = useState([]);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const userId = user?.uid || 'guest';
@@ -324,25 +165,31 @@ export default function App() {
         if (activeView === 'adminPanel') {
             return <AdminPanel onBack={() => setActiveView('dashboard')} onManageCategories={() => setActiveView('manageCategories')} />;
         }
+        if (activeView === 'fullCalendarManager') {
+            return <FullCalendarManager userId={userId} onBack={() => setActiveView('dashboard')} />;
+        }
+        if (activeView === 'searchResults') {
+            return <SearchResultsView searchResults={searchResults} onBack={() => setActiveView('dashboard')} />;
+        }
 
         // Lógica de renderizado principal
         if (user) {
             switch (activeRole) {
                 case 'prestador':
-                    return <VendorDashboardView userId={userId} serviceCategories={serviceCategories} />;
+                    return <VendorDashboardView userId={userId} serviceCategories={serviceCategories} onManageCalendar={() => setActiveView('fullCalendarManager')} />;
                 case 'admin':
                     // Implementación futura del panel de Admin
-                    return <VendorDashboardView userId={userId} serviceCategories={serviceCategories} onManageCategories={() => setActiveView('manageCategories')} />;
+                    return <VendorDashboardView userId={userId} serviceCategories={serviceCategories} onManageCalendar={() => setActiveView('fullCalendarManager')} onManageCategories={() => setActiveView('manageCategories')} />;
                 case 'cliente':
                 default:
-                    return <ClientHomeView userId={userId} serviceCategories={serviceCategories} />;
+                    return <ClientHomeView userId={userId} serviceCategories={serviceCategories} onSearchResults={(results) => { setSearchResults(results); setActiveView('searchResults'); }} />;
             }
         } else {
             // Vistas para usuarios no logueados
             if (activeView === 'login') return <LoginScreen onSwitchView={() => setActiveView('register')} />;
             if (activeView === 'register') return <RegisterScreen onSwitchView={() => setActiveView('login')} />;
             // Por defecto, mostrar la vista de cliente
-            return <ClientHomeView userId={userId} serviceCategories={serviceCategories} />;
+            return <ClientHomeView userId={userId} serviceCategories={serviceCategories} onSearchResults={(results) => { setSearchResults(results); setActiveView('searchResults'); }} />;
         }
     };
 
