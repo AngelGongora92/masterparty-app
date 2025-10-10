@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { doc, onSnapshot, setDoc, updateDoc, arrayUnion, arrayRemove, deleteField } from 'firebase/firestore';
-import { db, appId } from './firebase';
+import { db, appId } from '../../firebase';
 import { Tag, Plus, Edit, Trash2, Save, X, LoaderCircle, ArrowLeft, FilePenLine, ChevronRight, Briefcase } from 'lucide-react';
 
 const CategoryManagerPage = ({ onBack }) => {

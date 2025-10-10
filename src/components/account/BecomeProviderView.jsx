@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { doc, writeBatch, arrayUnion } from 'firebase/firestore';
-import { db, appId, auth } from './firebase';
+import { db, appId, auth } from '../../firebase';
 import { ArrowLeft, Building, Phone, Mail, Sparkles } from 'lucide-react';
 
 const BecomeProviderView = ({ userId, onBack }) => {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { auth, db, appId } from './firebase';
+import { auth, db, appId } from '../../firebase';
 import { Sparkles, User, Mail, Lock, Calendar, Users, Phone, Eye, EyeOff } from 'lucide-react';
 
 const RegisterScreen = ({ onSwitchView }) => {

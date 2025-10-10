@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from './firebase';
+import { auth } from '../../firebase';
 import { Sparkles, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
 const LoginScreen = ({ onSwitchView }) => {

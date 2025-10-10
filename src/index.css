@@ -30,3 +30,53 @@
     display: none; /* Safari and Chrome */
   }
 }
+
+/* Estilos personalizados para react-calendar */
+@layer components {
+  .calendar-container .react-calendar {
+    @apply w-full border-2 border-gray-200 rounded-xl p-2 bg-white;
+  }
+
+  /* Navegación del mes */
+  .calendar-container .react-calendar__navigation button {
+    @apply font-bold text-violet-700 hover:bg-violet-100 rounded-lg;
+  }
+  .calendar-container .react-calendar__navigation button:disabled {
+    @apply bg-transparent text-gray-300;
+  }
+  .calendar-container .react-calendar__navigation__label {
+    @apply font-extrabold text-lg text-violet-800;
+  }
+
+  /* Nombres de los días de la semana */
+  .calendar-container .react-calendar__month-view__weekdays__weekday {
+    @apply text-center font-bold text-sm text-pink-600 uppercase pb-2;
+  }
+  .calendar-container .react-calendar__month-view__weekdays__weekday abbr {
+    @apply no-underline;
+  }
+
+  /* Estilo base de cada día (tile) */
+  .calendar-container .react-calendar__tile {
+    @apply text-center p-3 rounded-lg border-2 border-transparent transition-colors duration-200;
+  }
+
+  /* Día de hoy */
+  .calendar-container .react-calendar__tile--now {
+    @apply bg-violet-50 text-violet-700 font-bold;
+  }
+  .calendar-container .react-calendar__tile--now:hover {
+    @apply bg-violet-100;
+  }
+
+  /* Días fuera del mes actual */
+  .calendar-container .react-calendar__month-view__days__day--neighboringMonth {
+    @apply text-gray-300;
+  }
+
+  /* Día seleccionado como "No disponible" */
+  .unavailable-day {
+    @apply bg-red-500 text-white font-bold line-through rounded-lg !important;
+    @apply hover:bg-red-600 !important;
+  }
+}
