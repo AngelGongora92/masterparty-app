@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db, appId } from './firebase';
+import { db, appId } from '../../firebase';
 import { User, Mail, Phone, Calendar, Users, ArrowLeft } from 'lucide-react';
 
 const AccountView = ({ userId, onBack }) => {

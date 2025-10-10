@@ -2,15 +2,15 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Search, Sparkles, Menu, CalendarCheck, Briefcase, ShieldCheck, DollarSign, Building2, Utensils, Gift, Music, Camera, Sofa, Plus, MapPin, Tag, Euro, X, Trash2, Edit, User, Users, ArrowLeft } from 'lucide-react';
-import { auth, db, appId } from './firebase';
-import LoginScreen from './LoginScreen.jsx';
-import RegisterScreen from './RegisterScreen.jsx';
-import AccountView from './AccountView.jsx';
-import AccountDisplayView from './AccountDisplayView.jsx';
-import BecomeProviderView from './BecomeProviderView.jsx';
-import VendorDashboardView from './VendorDashboard.jsx';
-import CategoryManagerPage from './CategoryManagerPage.jsx';
-import AdminPanel from './AdminPanel.jsx';
+import { auth, db, appId } from './firebase.js';
+import LoginScreen from './components/auth/LoginScreen.jsx';
+import RegisterScreen from './components/auth/RegisterScreen.jsx';
+import AccountView from './components/account/AccountView.jsx';
+import AccountDisplayView from './components/account/AccountDisplayView.jsx';
+import BecomeProviderView from './components/account/BecomeProviderView.jsx';
+import VendorDashboardView from './components/vendor/VendorDashboard.jsx';
+import CategoryManagerPage from './components/admin/CategoryManagerPage.jsx';
+import AdminPanel from './components/admin/AdminPanel.jsx';
 
 // =====================================================================
 // 1. CONFIGURACIÓN INICIAL
@@ -193,7 +193,7 @@ const LandingView = () => (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center bg-violet-700 text-white">
         <Sparkles className="w-12 h-12 text-pink-400 mb-4" />
         <h1 className="text-4xl font-extrabold mb-4">MasterParty Pro</h1>
-        <p className="text-lg mb-8">Cargando aplicación y autenticación...</p>
+        <p className="text-lg mb-8">Cargando los mejores servicios para tu evento...</p>
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-pink-500"></div>
     </div>
 );
