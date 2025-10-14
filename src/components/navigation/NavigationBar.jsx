@@ -3,7 +3,7 @@ import { signOut } from 'firebase/auth';
 import { Link, useNavigate } from 'react-router-dom';
 import { auth } from '../../firebase';
 import { useAuth } from '../../context/AuthContext';
-import { Sparkles, Menu, ShieldCheck, Briefcase, Users, User, X } from 'lucide-react';
+import { Sparkles, Menu, ShieldCheck, Briefcase, Users, User, X, CalendarHeart } from 'lucide-react';
 
 const NavigationBar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -83,7 +83,6 @@ const NavigationBar = () => {
                                 </Link>
                             )}
                             {userRoles.includes('prestador') && activeRole === 'cliente' && (
-                                <>
                                  <Link
                                     to="/vendor/dashboard"
                                     onClick={() => setActiveRole('prestador')}
@@ -91,8 +90,14 @@ const NavigationBar = () => {
                                 >
                                     <Briefcase className="w-4 h-4" /> Panel servicios
                                 </Link>
-                                </>
                             )}
+                            <Link
+                                to="/my-bookings"
+                                className="px-3 py-1.5 rounded-xl shadow-md font-semibold text-sm hidden sm:flex items-center gap-2 bg-pink-50 hover:bg-pink-100 text-pink-700"
+                            >
+                                <CalendarHeart className="w-4 h-4" />
+                                Mis Reservas
+                            </Link>
                             <Link
                                 to="/account"
                                 className="bg-violet-100 hover:bg-violet-200 text-violet-700 px-3 py-1.5 rounded-xl shadow-md font-semibold text-sm hidden sm:flex items-center gap-2"
@@ -144,6 +149,9 @@ const NavigationBar = () => {
                     {userRoles.includes('admin') && ( <Link to="/admin" onClick={() => setIsMenuOpen(false)} className="w-full text-left px-3 py-2 rounded-md font-medium text-yellow-800 hover:bg-yellow-50 flex items-center gap-2"> <ShieldCheck className="w-5 h-5" /> Panel Admin </Link> )}
                     {userRoles.includes('cliente') && activeRole === 'prestador' && ( <Link to="/" onClick={() => { setActiveRole('cliente'); setIsMenuOpen(false); }} className="w-full text-left px-3 py-2 rounded-md font-medium text-gray-700 hover:bg-gray-100 flex items-center gap-2"> <Users className="w-5 h-5" /> Modo Cliente </Link> )}
                     {userRoles.includes('prestador') && activeRole === 'cliente' && ( <Link to="/vendor/dashboard" onClick={() => { setActiveRole('prestador'); setIsMenuOpen(false); }} className="w-full text-left px-3 py-2 rounded-md font-medium text-gray-700 hover:bg-gray-100 flex items-center gap-2"> <Briefcase className="w-5 h-5" /> Panel servicios </Link> )}
+                    <Link to="/my-bookings" onClick={() => setIsMenuOpen(false)} className="w-full text-left px-3 py-2 rounded-md font-medium text-gray-700 hover:bg-gray-100 flex items-center gap-2">
+                        <CalendarHeart className="w-5 h-5" /> Mis Reservas
+                    </Link>
                     <Link to="/account" onClick={() => setIsMenuOpen(false)} className="w-full text-left px-3 py-2 rounded-md font-medium text-gray-700 hover:bg-gray-100 flex items-center gap-2">
                         <User className="w-5 h-5" /> Mi Cuenta
                     </Link>

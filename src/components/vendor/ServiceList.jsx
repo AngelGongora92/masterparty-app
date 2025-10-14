@@ -7,7 +7,7 @@ import AvailabilityModal from './AvailabilityModal';
 /**
  * Muestra la lista de servicios publicados por el Prestador.
  */
-const ServiceList = ({ userId }) => {
+const ServiceList = ({ userId, onDeleteService }) => {
     const [services, setServices] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedService, setSelectedService] = useState(null);
@@ -37,12 +37,6 @@ const ServiceList = ({ userId }) => {
         return () => unsubscribe();
     }, [userId]);
 
-    const handleDelete = (serviceId, serviceName) => {
-        if (window.confirm(`¿Estás seguro de que quieres eliminar el servicio: ${serviceName}?`)) {
-            alert(`Simulando eliminación del servicio: ${serviceId}. Esto sería un deleteDoc() en Firestore.`);
-        }
-    };
-    
     const handleEdit = (service) => {
          alert(`Simulando edición del servicio: ${service.name}. Esto abriría el formulario de edición.`);
     };
@@ -84,7 +78,7 @@ const ServiceList = ({ userId }) => {
                                 key={service.id}
                                 service={service}
                                 onEdit={handleEdit}
-                                onDelete={handleDelete}
+                                onDeleteService={onDeleteService}
                                 onManageAvailability={handleManageAvailability}
                             />
                         ))}

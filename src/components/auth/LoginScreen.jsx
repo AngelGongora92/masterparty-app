@@ -15,7 +15,7 @@ const LoginScreen = () => {
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
-    const from = location.state?.from?.pathname || "/";
+    const from = location.state?.from || "/";
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -92,7 +92,7 @@ const LoginScreen = () => {
 
                 <p className="text-center text-sm text-gray-600 mt-6">
                     ¿No tienes una cuenta?{' '}
-                    <Link to="/register" className="font-semibold text-violet-600 hover:underline">
+                    <Link to="/register" state={{ from: from }} className="font-semibold text-violet-600 hover:underline">
                         Regístrate aquí
                     </Link>
                 </p>

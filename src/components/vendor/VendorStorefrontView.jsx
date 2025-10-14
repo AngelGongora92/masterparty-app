@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs, doc, getDoc, collectionGroup } from 'firebase/firestore';
 import { db, appId } from '../../firebase';
 import { LoaderCircle, Frown, Store, Calendar, Users, Tag } from 'lucide-react';
@@ -62,6 +62,8 @@ const StorefrontFilters = ({ categories, onFilterChange, filters }) => {
 
 const VendorStorefrontView = () => {
     const { slug } = useParams();
+    const location = useLocation();
+    const navigate = useNavigate();
     const [vendorData, setVendorData] = useState(null);
     const [services, setServices] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -110,6 +112,22 @@ const VendorStorefrontView = () => {
 
         fetchData();
     }, [slug]);
+
+    // Efecto para abrir el modal si la URL lo indica (después de iniciar sesión)
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const serviceToOpen = params.get('openService');
+
+        if (serviceToOpen && services.length > 0) {
+            const service = services.find(s => s.id === serviceToOpen);
+            if (service) {
+                handleViewDetails(service);
+                // Limpiamos el parámetro de la URL para que no se vuelva a abrir al refrescar
+                params.delete('openService');
+                navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+            }
+        }
+    }, [services, location.search, navigate]);
 
     const handleFilterChange = (filterName, value) => {
         setFilters(prev => ({ ...prev, [filterName]: value }));

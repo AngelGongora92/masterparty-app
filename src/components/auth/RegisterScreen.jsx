@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db, appId } from '../../firebase';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Sparkles, User, Mail, Lock, Calendar, Users, Phone, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
 const RegisterScreen = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
@@ -22,11 +23,13 @@ const RegisterScreen = () => {
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
+    const from = location.state?.from || "/";
+
     useEffect(() => {
         if (user) {
-            navigate('/');
+            navigate(from, { replace: true });
         }
-    }, [user, navigate]);
+    }, [user, navigate, from]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });

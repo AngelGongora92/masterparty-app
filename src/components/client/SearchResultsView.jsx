@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db, appId } from '../../firebase';
 import { ArrowLeft, Frown, LoaderCircle } from 'lucide-react';
@@ -7,6 +7,7 @@ import ServiceDetailModal from './ServiceDetailModal';
 import ServiceResultCard from './ServiceResultCard';
 
 const SearchResultsView = () => {
+    const location = useLocation();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
 
@@ -66,6 +67,22 @@ const SearchResultsView = () => {
 
         performSearch();
     }, [searchParams]);
+
+    // Efecto para abrir el modal si la URL lo indica (después de iniciar sesión)
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const serviceToOpen = params.get('openService');
+
+        if (serviceToOpen && searchResults) {
+            const service = searchResults.find(s => s.id === serviceToOpen);
+            if (service) {
+                handleViewDetails(service);
+                // Limpiamos el parámetro de la URL para que no se vuelva a abrir al refrescar
+                params.delete('openService');
+                navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+            }
+        }
+    }, [searchResults, location.search, navigate]);
 
     const handleViewDetails = (service) => {
         setSelectedService(service);
