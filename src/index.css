@@ -114,3 +114,33 @@
     @apply bg-violet-500 bg-opacity-50;
   }
 }
+
+/* Estilos para el calendario en el modal del cliente */
+.calendar-container-client .react-calendar {
+    @apply border-none w-full;
+}
+
+.calendar-container-client .react-calendar__navigation button {
+    @apply font-bold text-violet-700 hover:bg-violet-100 rounded-lg;
+}
+
+.calendar-container-client .react-calendar__month-view__weekdays__weekday {
+    @apply text-pink-600 font-bold uppercase text-xs;
+}
+
+.calendar-container-client .react-calendar__tile {
+    @apply rounded-lg;
+}
+
+.calendar-container-client .react-calendar__tile:enabled:hover,
+.calendar-container-client .react-calendar__tile:enabled:focus {
+    @apply bg-violet-100;
+}
+
+.calendar-container-client .react-calendar__tile--now {
+    @apply bg-violet-100 text-violet-800 font-bold;
+}
+
+.calendar-container-client .react-calendar__tile--active {
+    @apply bg-violet-600 text-white;
+}

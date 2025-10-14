@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db, appId } from '../../firebase';
+import { useAuth } from '../../context/AuthContext';
 import { User, Mail, Phone, Calendar, Users, ArrowLeft } from 'lucide-react';
 
-const AccountView = ({ userId, onBack }) => {
+const AccountView = () => {
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
@@ -12,6 +14,8 @@ const AccountView = ({ userId, onBack }) => {
         age: '',
         gender: 'Otro',
     });
+    const { userId } = useAuth();
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [updating, setUpdating] = useState(false);
     const [error, setError] = useState('');
@@ -77,7 +81,7 @@ const AccountView = ({ userId, onBack }) => {
 
     return (
         <div className="max-w-2xl mx-auto p-4 sm:p-8">
-            <button onClick={onBack} className="flex items-center gap-2 text-violet-600 font-semibold mb-6 hover:underline">
+            <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-violet-600 font-semibold mb-6 hover:underline">
                 <ArrowLeft className="w-5 h-5" />
                 Volver a mi perfil
             </button>

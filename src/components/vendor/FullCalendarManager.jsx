@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Calendar from 'react-calendar';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import 'react-calendar/dist/Calendar.css';
 import { ArrowLeft, LoaderCircle, Save } from 'lucide-react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -14,7 +16,9 @@ const toISODateString = (date) => {
     return `${year}-${month}-${day}`;
 };
 
-const FullCalendarManager = ({ onBack, userId }) => {
+const FullCalendarManager = () => {
+    const { userId } = useAuth();
+    const navigate = useNavigate();
     // Estado para la fecha seleccionada en el calendario
     const [selectedDate, setSelectedDate] = useState(new Date());
     // Estado para almacenar los bloques horarios no disponibles
@@ -55,12 +59,16 @@ const FullCalendarManager = ({ onBack, userId }) => {
         fetchServices();
     }, [userId]);
 
-    // Genera los bloques de una hora para el día seleccionado
-    const timeSlots = Array.from({ length: 24 }, (_, i) => {
-        const hour = i.toString().padStart(2, '0');
-        return `${hour}:00`;
-    });
+    // Genera las horas del día
+    const hours = Array.from({ length: 24 }, (_, i) => i);
 
+    // Genera los bloques de una hora para el día seleccionado
+    const timeSlots = Array.from({ length: 48 }, (_, i) => {
+        const hour = Math.floor(i / 2).toString().padStart(2, '0');
+        const minute = i % 2 === 0 ? '00' : '30';
+        return `${hour}:${minute}`;
+    });
+    
     // Maneja el clic en un día del calendario
     const handleDateChange = (date) => {
         setSelectedDate(date);
@@ -162,7 +170,7 @@ const FullCalendarManager = ({ onBack, userId }) => {
     
     return (
         <div className="p-4 sm:p-8 max-w-7xl mx-auto min-h-screen bg-gray-50">
-            <button onClick={onBack} className="flex items-center gap-2 text-violet-600 font-semibold mb-6 hover:underline">
+            <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-violet-600 font-semibold mb-6 hover:underline">
                 <ArrowLeft className="w-5 h-5" />
                 Volver al Panel
             </button>
@@ -218,31 +226,44 @@ const FullCalendarManager = ({ onBack, userId }) => {
                     <h3 className="text-lg font-bold text-violet-800 text-center mb-3">
                         {selectedDate.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                     </h3>
-                    <div 
-                        className="space-y-1 max-h-[55vh] overflow-y-auto pr-2"
+                    <div
+                        className="space-y-2 max-h-[55vh] overflow-y-auto pr-2"
                         onMouseUp={handleMouseUp}
                         onMouseLeave={handleMouseUp} // Termina la selección si el ratón sale del contenedor
                     >
-                        {timeSlots.map(slot => {
+                        {hours.map(hour => {
+                            const hourString = hour.toString().padStart(2, '0');
+                            const slot1 = `${hourString}:00`;
+                            const slot2 = `${hourString}:30`;
                             const dateString = toISODateString(selectedDate);
-                            // Un slot se muestra como bloqueado si está en la lista de CUALQUIERA de los servicios seleccionados
-                            const isBlocked = selectedServices.some(serviceId => 
-                                blockedSlots[dateString]?.[serviceId]?.includes(slot)
-                            );
-                            const isBeingDraggedOver = dragCurrentSlots.includes(slot);
+
+                            const isBlocked1 = selectedServices.some(id => blockedSlots[dateString]?.[id]?.includes(slot1));
+                            const isBlocked2 = selectedServices.some(id => blockedSlots[dateString]?.[id]?.includes(slot2));
+                            const isDragged1 = dragCurrentSlots.includes(slot1);
+                            const isDragged2 = dragCurrentSlots.includes(slot2);
+
+                            const getSlotClass = (isBlocked, isDragged) => {
+                                if (isDragged) return dragMode === 'block' ? 'bg-pink-300 border-pink-400' : 'bg-gray-300 border-gray-400';
+                                if (isBlocked) return 'bg-pink-500 text-white border-pink-600';
+                                return 'bg-gray-100 hover:bg-violet-100 border-gray-200';
+                            };
 
                             return (
-                                <button
-                                    key={slot}
-                                    onMouseDown={() => handleMouseDown(slot)}
-                                    onMouseEnter={() => handleMouseEnter(slot)}
-                                    className={`w-full text-left p-2 rounded-lg transition-colors text-sm font-mono select-none ${
-                                        isBeingDraggedOver ? (dragMode === 'block' ? 'bg-pink-300' : 'bg-gray-300') : 
-                                        (isBlocked ? 'bg-pink-500 text-white font-bold' : 'bg-gray-100 hover:bg-violet-100')
-                                    }`}
-                                >
-                                    {slot} - {`${parseInt(slot.split(':')[0]) + 1}`.padStart(2, '0')}:00 {isBlocked && <span className="font-sans text-xs">(Bloqueado)</span>}
-                                </button>
+                                <div key={hour} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg border border-gray-200">
+                                    <div className="w-12 text-center text-sm font-bold text-gray-500">{hourString}</div>
+                                    <div className="flex-grow flex flex-col gap-1">
+                                        <button
+                                            onMouseDown={() => handleMouseDown(slot1)}
+                                            onMouseEnter={() => handleMouseEnter(slot1)}
+                                            className={`p-2 text-left rounded-md border text-xs transition-colors select-none ${getSlotClass(isBlocked1, isDragged1)}`}
+                                        >:00</button>
+                                        <button
+                                            onMouseDown={() => handleMouseDown(slot2)}
+                                            onMouseEnter={() => handleMouseEnter(slot2)}
+                                            className={`p-2 text-left rounded-md border text-xs transition-colors select-none ${getSlotClass(isBlocked2, isDragged2)}`}
+                                        >:30</button>
+                                    </div>
+                                </div>
                             );
                         })}
                     </div>

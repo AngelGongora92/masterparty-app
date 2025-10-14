@@ -1,10 +1,12 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Shield, Settings } from 'lucide-react';
 
-const AdminPanel = ({ onBack, onManageCategories }) => {
+const AdminPanel = () => {
+    const navigate = useNavigate();
     return (
         <div className="max-w-5xl mx-auto p-4 sm:p-8 min-h-screen bg-gray-50">
-            <button onClick={onBack} className="flex items-center gap-2 text-violet-600 font-semibold mb-6 hover:underline">
+            <button onClick={() => navigate('/')} className="flex items-center gap-2 text-violet-600 font-semibold mb-6 hover:underline">
                 <ArrowLeft className="w-5 h-5" />
                 Volver al panel principal
             </button>
@@ -19,7 +21,7 @@ const AdminPanel = ({ onBack, onManageCategories }) => {
                 <div className="mt-8 pt-6 border-t border-gray-200">
                     <h2 className="text-lg font-bold text-gray-800 mb-4">Herramientas</h2>
                     <div className="flex flex-col sm:flex-row gap-4">
-                        <button onClick={onManageCategories} className="bg-gray-700 text-white font-semibold px-6 py-3 rounded-xl hover:bg-gray-800 transition-colors flex items-center gap-2 justify-center">
+                        <button onClick={() => navigate('/admin/categories')} className="bg-gray-700 text-white font-semibold px-6 py-3 rounded-xl hover:bg-gray-800 transition-colors flex items-center gap-2 justify-center">
                             <Settings className="w-5 h-5" />
                             Gestionar Categorías
                         </button>
