@@ -1,7 +1,7 @@
 import React from 'react';
 import { Users, Trash2, Tag, Edit, Image as ImageIcon, CalendarDays } from 'lucide-react';
 
-const ServiceItem = ({ service, onEdit, onDelete, onManageAvailability }) => {
+const ServiceItem = ({ service, onEdit, onDeleteService, onManageAvailability }) => {
     const firstImage = service.imageUrls && service.imageUrls.length > 0 ? service.imageUrls[0] : null;
 
     const getCapacityText = () => {
@@ -43,7 +43,7 @@ const ServiceItem = ({ service, onEdit, onDelete, onManageAvailability }) => {
                     title="Editar Servicio"
                 ><Edit className="w-5 h-5" /></button>
                 <button 
-                    onClick={() => onDelete(service.id, service.name)} 
+                    onClick={() => onDeleteService(service.id, service.name)} 
                     className="p-2 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition"
                     title="Eliminar Servicio"
                 ><Trash2 className="w-5 h-5" /></button>

@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { collection, addDoc, updateDoc, GeoPoint } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
-import { Briefcase, Plus, Users, DollarSign, Trash2, Tag, MousePointerClick, Truck, UploadCloud, X } from 'lucide-react';
+import { Briefcase, Plus, Users, DollarSign, Trash2, Tag, MousePointerClick, Truck, UploadCloud, X, Clock, Package, UserCheck } from 'lucide-react';
 import { db, appId } from '../../firebase';
+import { useAuth } from '../../context/AuthContext';
 
 const loadGoogleMapsScript = (apiKey, callback) => {
     if (window.google && window.google.maps) {
@@ -74,6 +75,7 @@ const MapPicker = ({ value, onChange }) => {
  * Formulario para crear o editar un servicio.
  */
 const ServiceForm = ({ userId, onServiceAdded, serviceCategories }) => {
+    const { userData } = useAuth();
     const [formData, setFormData] = useState({
         name: '',
         description: '',
@@ -81,7 +83,7 @@ const ServiceForm = ({ userId, onServiceAdded, serviceCategories }) => {
         subCategory: '',
         costPerKm: '',
         freeKmRadius: '',
-        capacityTiers: [{ capacity: '', price: '' }],
+        packages: [{ name: '', duration: 1, capacity: '', price: '' }],
         location: { latitude: '', longitude: '' }
     });
     const [loading, setLoading] = useState(false);
@@ -123,7 +125,7 @@ const ServiceForm = ({ userId, onServiceAdded, serviceCategories }) => {
     };
 
     const resetForm = () => {
-        setFormData({ name: '', description: '', mainCategory: '', subCategory: '', costPerKm: '', freeKmRadius: '', capacityTiers: [{ capacity: '', price: '' }], location: { latitude: '', longitude: '' } });
+        setFormData({ name: '', description: '', mainCategory: '', subCategory: '', costPerKm: '', freeKmRadius: '', packages: [{ name: '', duration: 1, capacity: '', price: '' }], location: { latitude: '', longitude: '' } });
         setImageFiles([]);
         setImagePreviews([]);
         setAppliesShipping(false);
@@ -135,40 +137,39 @@ const ServiceForm = ({ userId, onServiceAdded, serviceCategories }) => {
 
         setLoading(true);
         try {
-            if (!formData.capacityTiers[0].capacity || !formData.capacityTiers[0].price) {
-                alert('Por favor, completa al menos el primer nivel de capacidad y precio.');
+            if (!formData.packages[0] || !formData.packages[0].name || !formData.packages[0].price) {
+                alert('Por favor, completa al menos el nombre y el precio del primer paquete.');
                 setLoading(false);
                 return;
             }
 
             if (imageFiles.length === 0) {
-                alert('Por favor, completa al menos el primer nivel de capacidad y precio.');
+                alert('Por favor, sube al menos una imagen para el servicio.');
                 setLoading(false);
                 return;
             }
 
-            const processedTiers = formData.capacityTiers
-                .filter(tier => tier.capacity && tier.price)
-                .map(tier => ({
-                    capacity: parseInt(tier.capacity, 10),
-                    price: parseFloat(tier.price),
-                }));
+            const processedPackages = formData.packages
+                .filter(pkg => pkg.name && pkg.price)
+                .map(pkg => ({ ...pkg, price: parseFloat(pkg.price), duration: parseFloat(pkg.duration), capacity: pkg.capacity || null }));
 
             const location = new GeoPoint(
                 parseFloat(formData.location.latitude), 
                 parseFloat(formData.location.longitude)
             );
 
+            if (processedPackages.length === 0) throw new Error("Debe haber al menos un paquete válido.");
+
             const newService = {
                 vendorId: userId,
+                businessName: userData.businessName,
                 name: formData.name,
                 description: formData.description,
                 mainCategory: formData.mainCategory,
                 type: formData.subCategory,
                 isActive: true,
-                capacityTiers: processedTiers,
-                basePrice: processedTiers[0].price,
-                baseCapacity: processedTiers[0].capacity,
+                packages: processedPackages,
+                basePrice: processedPackages[0].price,
                 transferFeeRule: {
                     type: 'distance_radius',
                     costPerKm: parseFloat(formData.costPerKm),
@@ -211,21 +212,21 @@ const ServiceForm = ({ userId, onServiceAdded, serviceCategories }) => {
         }
     };
 
-    const handleTierChange = (index, e) => {
+    const handlePackageChange = (index, e) => {
         const { name, value } = e.target;
-        const newTiers = [...formData.capacityTiers];
-        newTiers[index][name] = value;
-        setFormData(prev => ({ ...prev, capacityTiers: newTiers }));
+        const newPackages = [...formData.packages];
+        newPackages[index][name] = value;
+        setFormData(prev => ({ ...prev, packages: newPackages }));
     };
 
-    const addTier = () => {
-        if (formData.capacityTiers.length < MAX_TIERS) {
-            setFormData(prev => ({ ...prev, capacityTiers: [...prev.capacityTiers, { capacity: '', price: '' }] }));
+    const addPackage = () => {
+        if (formData.packages.length < MAX_TIERS) {
+            setFormData(prev => ({ ...prev, packages: [...prev.packages, { name: '', duration: 1, capacity: '', price: '' }] }));
         }
     };
 
-    const removeTier = (index) => {
-        setFormData(prev => ({ ...prev, capacityTiers: prev.capacityTiers.filter((_, i) => i !== index) }));
+    const removePackage = (index) => {
+        setFormData(prev => ({ ...prev, packages: prev.packages.filter((_, i) => i !== index) }));
     };
 
     const handleImageChange = (e) => {
@@ -287,15 +288,19 @@ const ServiceForm = ({ userId, onServiceAdded, serviceCategories }) => {
                     </div>
                 </div>
                 <div className="space-y-4">
-                    <h3 className="text-lg font-bold text-gray-600 border-b pb-2">Capacidad y Precios</h3>
-                    {formData.capacityTiers.map((tier, index) => (
-                        <div key={index} className="flex items-end gap-2 p-3 bg-violet-50 rounded-lg">
-                            <div className="flex-grow"><label className="block text-sm font-medium text-gray-700 flex items-center gap-1"><Users className="w-4 h-4 text-violet-500" /> Capacidad (personas)</label><input type="number" name="capacity" value={tier.capacity} onChange={(e) => handleTierChange(index, e)} required min="1" placeholder="Ej: 50" className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-3 border" /></div>
-                            <div className="flex-grow"><label className="block text-sm font-medium text-gray-700 flex items-center gap-1"><DollarSign className="w-4 h-4 text-violet-500" /> Precio ($)</label><input type="number" name="price" value={tier.price} onChange={(e) => handleTierChange(index, e)} required min="0" placeholder="Ej: 1200" className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-3 border" /></div>
-                            {formData.capacityTiers.length > 1 && (<button type="button" onClick={() => removeTier(index)} className="p-3 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition h-full"><Trash2 className="w-5 h-5" /></button>)}
+                    <h3 className="text-lg font-bold text-gray-600 border-b pb-2">Paquetes del Servicio</h3>
+                    {formData.packages.map((pkg, index) => (
+                        <div key={index} className="p-4 bg-violet-50 rounded-lg space-y-3 relative border border-violet-100">
+                            <div className="flex-grow"><label className="block text-sm font-medium text-gray-700 flex items-center gap-1"><Package className="w-4 h-4 text-violet-500" /> Nombre del Paquete</label><input type="text" name="name" value={pkg.name} onChange={(e) => handlePackageChange(index, e)} required placeholder="Ej: Paquete Básico" className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-3 border" /></div>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div className="flex-grow"><label className="block text-sm font-medium text-gray-700 flex items-center gap-1"><Clock className="w-4 h-4 text-violet-500" /> Duración</label><select name="duration" value={pkg.duration} onChange={(e) => handlePackageChange(index, e)} required className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-3 border">{Array.from({ length: 16 }, (_, i) => { const hours = 0.5 * (i + 1); const hourPart = Math.floor(hours); const minutePart = (hours % 1) * 60; const label = `${hourPart > 0 ? `${hourPart}h` : ''} ${minutePart > 0 ? `${minutePart}min` : ''}`.trim(); return <option key={hours} value={hours}>{label}</option>; })}</select></div>
+                                <div className="flex-grow"><label className="block text-sm font-medium text-gray-700 flex items-center gap-1"><Users className="w-4 h-4 text-violet-500" /> Capacidad</label><input type="text" name="capacity" value={pkg.capacity} onChange={(e) => handlePackageChange(index, e)} placeholder="Ej: 50 o N/A" className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-3 border" /></div>
+                                <div className="flex-grow"><label className="block text-sm font-medium text-gray-700 flex items-center gap-1"><DollarSign className="w-4 h-4 text-violet-500" /> Precio ($)</label><input type="number" name="price" value={pkg.price} onChange={(e) => handlePackageChange(index, e)} required min="0" placeholder="Ej: 1200" className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-3 border" /></div>
+                            </div>
+                            {formData.packages.length > 1 && (<button type="button" onClick={() => removePackage(index)} className="absolute top-2 right-2 p-2 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition"><Trash2 className="w-4 h-4" /></button>)}
                         </div>
                     ))}
-                    {formData.capacityTiers.length < MAX_TIERS && (<button type="button" onClick={addTier} className="w-full text-violet-700 font-semibold py-2 px-4 border-2 border-dashed border-violet-300 rounded-lg hover:bg-violet-100 transition flex items-center justify-center gap-2"><Plus className="w-4 h-4" /> Añadir otro nivel de capacidad</button>)}
+                    {formData.packages.length < MAX_TIERS && (<button type="button" onClick={addPackage} className="w-full text-violet-700 font-semibold py-2 px-4 border-2 border-dashed border-violet-300 rounded-lg hover:bg-violet-100 transition flex items-center justify-center gap-2"><Plus className="w-4 h-4" /> Añadir otro paquete</button>)}
                 </div>
                 <div className="space-y-4">
                     <h3 className="text-lg font-bold text-gray-600 border-b pb-2">Ubicación y Tarifas de Traslado</h3>

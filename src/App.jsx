@@ -22,6 +22,7 @@ import NewServicePage from './components/vendor/NewServicePage.jsx';
 import SearchResultsView from './components/client/SearchResultsView.jsx';
 import ServiceDetailModal from './components/client/ServiceDetailModal.jsx';
 import VendorBookingsView from './components/vendor/VendorBookingsView.jsx';
+import ClientBookingsView from './components/client/ClientBookingsView.jsx';
 import VendorStorefrontView from './components/vendor/VendorStorefrontView.jsx';
 
 // =====================================================================
@@ -93,6 +94,7 @@ const AppContent = () => {
                 <Route element={<ProtectedRoute />}>
                     <Route path="/account" element={<AccountDisplayView />} />
                     <Route path="/account/edit" element={<AccountView />} />
+                    <Route path="/my-bookings" element={<ClientBookingsView />} />
                     <Route path="/account/become-provider" element={<BecomeProviderView />} />
                 </Route>
 

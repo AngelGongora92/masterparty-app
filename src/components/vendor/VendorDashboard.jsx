@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Briefcase, CalendarClock, Bell, PlusCircle, Store, Link as LinkIcon, Save, LoaderCircle, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import ServiceList from './ServiceList';
-import { doc, collectionGroup, query, where, getDocs, updateDoc } from 'firebase/firestore';
+import { doc, collectionGroup, query, where, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db, appId } from '../../firebase';
 
 const SlugEditor = ({ currentSlug, userId }) => {
@@ -85,10 +85,26 @@ const VendorDashboardView = ({ serviceCategories }) => {
     const navigate = useNavigate();
     const [refreshKey, setRefreshKey] = useState(0); 
 
-    const forceRefresh = useCallback(() => {
-        setRefreshKey(prev => prev + 1);
-    }, []);
+    const forceRefresh = useCallback(() => setRefreshKey(prev => prev + 1), []);
 
+    const handleDeleteService = async (serviceId, serviceName) => {
+        if (window.confirm(`¿Estás seguro de que quieres eliminar el servicio "${serviceName}"? Esta acción no se puede deshacer.`)) {
+            try {
+                // Lógica para eliminar el servicio de Firestore
+                const serviceDocRef = doc(db, `artifacts/${appId}/public/data/services/${serviceId}`);
+                await deleteDoc(serviceDocRef);
+                
+                // Aquí también podrías añadir la lógica para eliminar las imágenes asociadas del Storage si lo necesitas.
+                
+                alert('Servicio eliminado con éxito.');
+                forceRefresh(); // Refresca la lista de servicios
+            } catch (error) {
+                console.error("Error deleting service: ", error);
+                alert('Ocurrió un error al eliminar el servicio.');
+            }
+        }
+    };
+    
     return (
         <div className="p-4 sm:p-8 max-w-5xl mx-auto min-h-screen bg-gray-50">
             <h1 className="text-3xl font-bold text-violet-800 flex items-center gap-2 mb-4">
@@ -123,7 +139,7 @@ const VendorDashboardView = ({ serviceCategories }) => {
             {userData?.slug && <SlugEditor currentSlug={userData.slug} userId={userId} />}
 
             {/* Listado de Servicios */}
-            <ServiceList userId={userId} key={refreshKey} />
+            <ServiceList userId={userId} key={refreshKey} onDeleteService={handleDeleteService} />
         </div>
     );
 };

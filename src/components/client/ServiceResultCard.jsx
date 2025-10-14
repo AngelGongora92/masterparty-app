@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Image as ImageIcon, Tag, Users, ChevronRight } from 'lucide-react';
+import { Image as ImageIcon, Tag, Users, ChevronRight, Building2 } from 'lucide-react';
 
 const ServiceResultCard = ({ service, onViewDetails }) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -47,6 +47,7 @@ const ServiceResultCard = ({ service, onViewDetails }) => {
             {/* Contenedor del Contenido */}
             <div className="flex-grow flex flex-col p-0 sm:p-4">
                 <h3 className="font-bold text-lg text-violet-800 truncate">{service.name}</h3>
+                {service.businessName && <p className="text-xs text-gray-500 flex items-center gap-1 mt-1.5"><Building2 className="w-3.5 h-3.5 text-pink-500" /> {service.businessName}</p>}
                 <p className="text-sm text-gray-600 flex items-center gap-1 mt-1"><Tag className="w-4 h-4 text-pink-500" /> {service.type}</p>
                 <p className="text-sm text-gray-600 flex items-center gap-1 mt-1"><Users className="w-4 h-4 text-pink-500" /> Capacidad: {getCapacityText()}</p>
                 <p className="text-xl font-extrabold text-pink-600 mt-2">Desde ${service.basePrice}</p>
