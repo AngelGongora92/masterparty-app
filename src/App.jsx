@@ -13,6 +13,7 @@ import MainLayout from './components/navigation/MainLayout.jsx';
 import AccountView from './components/account/AccountView.jsx';
 import AccountDisplayView from './components/account/AccountDisplayView.jsx';
 import BecomeProviderView from './components/account/BecomeProviderView.jsx';
+import EditProviderView from './components/vendor/EditProviderView.jsx';
 import VendorDashboardView from './components/vendor/VendorDashboard.jsx';
 import CategoryManagerPage from './components/admin/CategoryManagerPage.jsx';
 import AdminPanel from './components/admin/AdminPanel.jsx';
@@ -104,6 +105,7 @@ const AppContent = () => {
                     <Route path="/vendor/calendar" element={<FullCalendarManager />} />
                     <Route path="/vendor/services/new" element={<NewServicePage />} />
                     <Route path="/vendor/bookings" element={<VendorBookingsView />} />
+                    <Route path="/vendor/edit-profile" element={<EditProviderView />} />
                 </Route>
 
                 {/* Rutas de Administrador */}

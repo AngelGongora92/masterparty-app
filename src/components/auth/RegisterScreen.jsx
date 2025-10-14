@@ -45,8 +45,8 @@ const RegisterScreen = () => {
             const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
             const newUser = userCredential.user;
 
-            // 2. Crear el documento de perfil en Firestore
-            const userDocRef = doc(db, `artifacts/${appId}/users/${newUser.uid}/profile/settings`);
+            // 2. Crear el documento de perfil del usuario en Firestore (estructura simplificada)
+            const userDocRef = doc(db, `artifacts/${appId}/users/${newUser.uid}`);
             await setDoc(userDocRef, {
                 roles: ['cliente'], // Rol inicial como un array
                 firstName: formData.firstName,
@@ -61,11 +61,16 @@ const RegisterScreen = () => {
             // El listener onAuthStateChanged en App.jsx se encargará de redirigir.
 
         } catch (err) {
-            console.error("Error en el registro:", err);
+            // Loguear el error completo para depuración
+            console.error("Error detallado en el registro:", err);
+            
+            // Mostrar errores más específicos al usuario
             if (err.code === 'auth/email-already-in-use') {
                 setError('Este correo electrónico ya está en uso.');
             } else if (err.code === 'auth/weak-password') {
                 setError('La contraseña debe tener al menos 6 caracteres.');
+            } else if (err.code === 'permission-denied') {
+                setError('Error de permisos. No se pudo crear el perfil de usuario en la base de datos. Revisa las reglas de seguridad de Firestore.');
             } else {
                 setError('Ocurrió un error durante el registro. Intenta de nuevo.');
             }
