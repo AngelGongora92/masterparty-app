@@ -22,7 +22,7 @@ const AccountView = () => {
     const [success, setSuccess] = useState('');
 
     const userDocRef = useCallback(() => {
-        return doc(db, `artifacts/${appId}/users/${userId}/profile/settings`);
+        return doc(db, `artifacts/${appId}/users/${userId}`);
     }, [userId]);
 
     useEffect(() => {

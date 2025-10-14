@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { doc, writeBatch, arrayUnion, collectionGroup, query, where, getDocs } from 'firebase/firestore';
+import { doc, writeBatch, arrayUnion, collection, query, where, getDocs } from 'firebase/firestore';
 import { db, appId, auth } from '../../firebase';
-import { ArrowLeft, Building, Phone, Mail, Sparkles, Link as LinkIcon } from 'lucide-react';
+import { ArrowLeft, Building, Phone, Mail, Sparkles, Link as LinkIcon, Globe, Instagram, Facebook } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const BecomeProviderView = () => {
@@ -10,6 +10,10 @@ const BecomeProviderView = () => {
         businessName: '',
         phoneNumber: '',
         contactEmail: '',
+        instagramUrl: '',
+        facebookUrl: '',
+        tiktokUrl: '',
+        websiteUrl: '',
     });
     const { userId } = useAuth();
     const navigate = useNavigate();
@@ -17,11 +21,7 @@ const BecomeProviderView = () => {
     const [error, setError] = useState('');
 
     const userProfileRef = useCallback(() => {
-        return doc(db, `artifacts/${appId}/users/${userId}/profile/settings`);
-    }, [userId]);
-
-    const providerDetailsRef = useCallback(() => {
-        return doc(db, `artifacts/${appId}/users/${userId}/provider/details`);
+        return doc(db, `artifacts/${appId}/users/${userId}`);
     }, [userId]);
 
     const generateSlug = (name) => {
@@ -42,42 +42,63 @@ const BecomeProviderView = () => {
         setLoading(true);
         setError('');
 
-        try {
-            // Generar un slug único automáticamente
-            const baseSlug = generateSlug(formData.businessName);
-            let finalSlug = baseSlug;
-            let slugExists = true;
-            let counter = 1;
+        // Pre-procesar las URLs para añadir https:// si es necesario
+        const processedData = { ...formData };
+        const urlFields = ['instagramUrl', 'facebookUrl', 'tiktokUrl', 'websiteUrl'];
 
-            while (slugExists) {
-                const slugQuery = query(collectionGroup(db, 'provider'), where('slug', '==', finalSlug));
-                const querySnapshot = await getDocs(slugQuery);
-                if (querySnapshot.empty) {
-                    slugExists = false;
-                } else {
-                    finalSlug = `${baseSlug}-${counter}`;
-                    counter++;
-                }
+        urlFields.forEach(field => {
+            const url = processedData[field];
+            if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+                processedData[field] = `https://${url}`;
+            }
+        });
+
+        try {
+            // 1. Verificar si el nombre del negocio ya está en uso.
+            // Para hacer la comparación insensible a mayúsculas/minúsculas, normalizamos ambos a minúsculas.
+            const providersRef = collection(db, `artifacts/${appId}/providers`);
+            const q = query(providersRef, where("businessNameNormalized", "==", formData.businessName.toLowerCase()));
+            const querySnapshot = await getDocs(q);
+
+            if (!querySnapshot.empty) {
+                setError('Este nombre de negocio ya está en uso. Por favor, elige otro.');
+                setLoading(false);
+                return;
             }
 
-            // Usamos un batch para asegurar que ambas escrituras sean atómicas
+            // 2. Generar el slug a partir del nombre, que ahora sabemos que es único.
+            const slug = generateSlug(formData.businessName);
+
+            // Usamos un batch para asegurar que todas las operaciones sean atómicas
             const batch = writeBatch(db);
+            const providersCollectionRef = collection(db, `artifacts/${appId}/providers`);
+            
+            // 1. Crear el nuevo documento del proveedor para obtener un ID
+            const newProviderRef = doc(providersCollectionRef);
 
-            // 1. Guardar los nuevos detalles del proveedor
-            batch.set(providerDetailsRef(), {
-                businessName: formData.businessName,
-                phoneNumber: formData.phoneNumber,
-                contactEmail: formData.contactEmail,
-                slug: finalSlug,
-                createdAt: Date.now(),
-            });
+            // 2. Preparar los datos del nuevo proveedor
+            const providerData = {
+                ownerId: userId, // Guardamos quién es el dueño original
+                adminUids: [userId], // Un array para futuros administradores
+                businessNameNormalized: processedData.businessName.toLowerCase(), // Guardamos la versión normalizada para búsquedas
+                businessName: processedData.businessName,
+                phoneNumber: processedData.phoneNumber,
+                contactEmail: processedData.contactEmail,
+                instagramUrl: processedData.instagramUrl,
+                facebookUrl: processedData.facebookUrl,
+                tiktokUrl: processedData.tiktokUrl,
+                websiteUrl: processedData.websiteUrl,
+                slug: slug,
+            };
+            batch.set(newProviderRef, providerData);
 
-            // 2. Actualizar el rol del usuario a 'prestador'
+            // 3. Actualizar el documento del usuario para añadir el rol y el ID del proveedor
             batch.update(userProfileRef(), {
-                roles: arrayUnion('prestador')
+                roles: arrayUnion('prestador'),
+                providerId: newProviderRef.id, // Vinculamos el usuario al proveedor
             });
 
-            // Ejecutar el batch
+            // 4. Ejecutar las operaciones en la base de datos.
             await batch.commit();
 
             alert('¡Felicidades! Ahora eres un proveedor. La página se recargará para mostrar tu nuevo panel.');
@@ -127,6 +148,41 @@ const BecomeProviderView = () => {
                             <input type="email" name="contactEmail" onChange={handleChange} required className="w-full pl-10 p-3 border border-gray-300 rounded-xl" />
                         </div>
                     </div>
+
+                    <div className="pt-4">
+                        <h3 className="text-lg font-bold text-gray-700 mb-2">Redes Sociales (Opcional)</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Instagram</label>
+                                <div className="relative mt-1">
+                                    <Instagram className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                                    <input type="text" name="instagramUrl" placeholder="instagram.com/tunegocio" onChange={handleChange} className="w-full pl-10 p-3 border border-gray-300 rounded-xl" />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Facebook</label>
+                                <div className="relative mt-1">
+                                    <Facebook className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                                    <input type="text" name="facebookUrl" placeholder="facebook.com/tunegocio" onChange={handleChange} className="w-full pl-10 p-3 border border-gray-300 rounded-xl" />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">TikTok</label>
+                                <div className="relative mt-1">
+                                    <LinkIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                                    <input type="text" name="tiktokUrl" placeholder="tiktok.com/@tunegocio" onChange={handleChange} className="w-full pl-10 p-3 border border-gray-300 rounded-xl" />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Página Web</label>
+                                <div className="relative mt-1">
+                                    <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                                    <input type="text" name="websiteUrl" placeholder="tunegocio.com" onChange={handleChange} className="w-full pl-10 p-3 border border-gray-300 rounded-xl" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     {error && <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">{error}</p>}
                     <button type="submit" disabled={loading} className="cta-button w-full text-white font-bold py-3 rounded-xl shadow-lg disabled:bg-pink-300">
                         {loading ? 'Registrando...' : 'Finalizar Registro como Proveedor'}

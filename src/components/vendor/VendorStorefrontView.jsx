@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
-import { collection, query, where, getDocs, doc, getDoc, collectionGroup } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db, appId } from '../../firebase';
-import { LoaderCircle, Frown, Store, Calendar, Users, Tag } from 'lucide-react';
+import { LoaderCircle, Frown, Store, Calendar, Users, Tag, Globe } from 'lucide-react';
+import { FaInstagram, FaFacebook, FaTiktok, FaWhatsapp } from 'react-icons/fa';
 import ServiceResultCard from '../client/ServiceResultCard';
 import ServiceDetailModal from '../client/ServiceDetailModal';
 
@@ -83,15 +84,16 @@ const VendorStorefrontView = () => {
 
             try {
                 // 1. Find the vendor by slug
-                const q = query(collectionGroup(db, 'provider'), where('slug', '==', slug));
+                const providersRef = collection(db, `artifacts/${appId}/providers`);
+                const q = query(providersRef, where("slug", "==", slug));
                 const querySnapshot = await getDocs(q);
 
                 if (querySnapshot.empty) {
                     throw new Error('No se encontró el proveedor.');
                 }
 
-                const vendorDoc = querySnapshot.docs[0];
-                const vendorId = vendorDoc.ref.parent.parent.id;
+                const vendorDoc = querySnapshot.docs[0]; // Asumimos que el slug es único
+                const vendorId = vendorDoc.data().ownerId;
                 const vendorDetails = vendorDoc.data();
                 setVendorData(vendorDetails);
 
@@ -185,6 +187,21 @@ const VendorStorefrontView = () => {
                     <Store className="w-12 h-12 mx-auto text-pink-500 mb-2" />
                     <h1 className="text-4xl font-extrabold text-violet-800">{vendorData?.businessName || 'Tienda del Proveedor'}</h1>
                     <p className="text-gray-600 mt-2">Explora todos los servicios que ofrecemos.</p>
+                    {/* Social Media Links */}
+                    <div className="flex justify-center items-center gap-6 mt-6">
+                        {vendorData?.phoneNumber && (
+                            <a 
+                                href={`https://wa.me/${vendorData.phoneNumber.replace(/\D/g, '')}`} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="social-icon-button text-[#25D366]"
+                            ><FaWhatsapp className="w-8 h-8" /></a>
+                        )}
+                        {vendorData?.facebookUrl && <a href={vendorData.facebookUrl} target="_blank" rel="noopener noreferrer" className="social-icon-button text-[#1877F2]"><FaFacebook className="w-8 h-8" /></a>}
+                        {vendorData?.instagramUrl && <a href={vendorData.instagramUrl} target="_blank" rel="noopener noreferrer" className="social-icon-button text-[#E1306C]"><FaInstagram className="w-8 h-8" /></a>}
+                        {vendorData?.tiktokUrl && <a href={vendorData.tiktokUrl} target="_blank" rel="noopener noreferrer" className="social-icon-button text-black"><FaTiktok className="w-8 h-8" /></a>}
+                        {vendorData?.websiteUrl && <a href={vendorData.websiteUrl} target="_blank" rel="noopener noreferrer" className="social-icon-button text-gray-600"><Globe className="w-8 h-8" /></a>}
+                    </div>
                 </div>
 
                 <StorefrontFilters categories={availableCategories} onFilterChange={handleFilterChange} filters={filters} />
