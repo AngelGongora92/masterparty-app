@@ -1,50 +1,21 @@
 import React, { useState } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db, appId } from '../../firebase';
+import { useNavigate } from 'react-router-dom';
 import { Briefcase, CalendarCheck, ShieldCheck, DollarSign, Building2, Utensils, Sofa, Gift, Music, Camera } from 'lucide-react';
 import ServiceSearchForm from './ServiceSearchForm';
 
 /**
  * Vista de la página de inicio para el cliente.
  */
-const ClientHomeView = ({ userId, serviceCategories, onSearchResults }) => {
-    const [isSearching, setIsSearching] = useState(false);
-    const [searchError, setSearchError] = useState('');
+const ClientHomeView = ({ serviceCategories }) => {
+    const navigate = useNavigate();
 
     const handleSearch = async ({ eventDate, mainCategory, subCategory }) => {
-        setIsSearching(true);
-        setSearchError('');
-
-        try {
-            const servicesRef = collection(db, `artifacts/${appId}/public/data/services`);
-            const queryConstraints = [];
-
-            if (mainCategory) {
-                queryConstraints.push(where("mainCategory", "==", mainCategory));
-            }
-            if (subCategory) {
-                queryConstraints.push(where("type", "==", subCategory));
-            }
-
-            const q = query(servicesRef, ...queryConstraints);
-            const querySnapshot = await getDocs(q);
-            let services = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-            // Filtrado por fecha en el lado del cliente
-            if (eventDate) {
-                services = services.filter(service => 
-                    !service.unavailableDates || !service.unavailableDates.includes(eventDate)
-                );
-            }
-
-            onSearchResults(services);
-
-        } catch (error) {
-            console.error("Error al buscar servicios:", error);
-            setSearchError("Ocurrió un error al realizar la búsqueda. Por favor, intenta de nuevo.");
-        } finally {
-            setIsSearching(false);
-        }
+        const params = new URLSearchParams();
+        if (eventDate) params.set('date', eventDate);
+        if (mainCategory) params.set('mainCategory', mainCategory);
+        if (subCategory) params.set('subCategory', subCategory);
+        
+        navigate(`/search?${params.toString()}`);
     };
 
     const categories = Object.keys(serviceCategories).map(name => {
@@ -80,8 +51,6 @@ const ClientHomeView = ({ userId, serviceCategories, onSearchResults }) => {
                 <ServiceSearchForm 
                     onSearch={handleSearch}
                     serviceCategories={serviceCategories}
-                    isSearching={isSearching}
-                    userId={userId}
                 />
             </div>
 

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { doc, onSnapshot, setDoc, updateDoc, arrayUnion, arrayRemove, deleteField } from 'firebase/firestore';
 import { db, appId } from '../../firebase';
 import { Tag, Plus, Edit, Trash2, Save, X, LoaderCircle, ArrowLeft, FilePenLine, ChevronRight, Briefcase } from 'lucide-react';
 
-const CategoryManagerPage = ({ onBack }) => {
+const CategoryManagerPage = () => {
     const [categories, setCategories] = useState({});
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [selectedCategory, setSelectedCategory] = useState(null);
 
@@ -172,7 +174,7 @@ const CategoryManagerPage = ({ onBack }) => {
 
     return (
         <div className="p-4 sm:p-8 max-w-2xl mx-auto min-h-screen bg-gray-50">
-            <button onClick={onBack} className="flex items-center gap-2 text-violet-600 font-semibold mb-6 hover:underline">
+            <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-violet-600 font-semibold mb-6 hover:underline">
                 <ArrowLeft className="w-5 h-5" />
                 Volver al panel
             </button>

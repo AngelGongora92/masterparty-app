@@ -1,14 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../firebase';
-import { Sparkles, Mail, Lock, Eye, EyeOff } from 'lucide-react';
-
-const LoginScreen = ({ onSwitchView }) => {
+import { Sparkles, Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+ 
+const LoginScreen = () => {
+    const { user } = useAuth();
+    const navigate = useNavigate();
+    const location = useLocation();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+
+    const from = location.state?.from?.pathname || "/";
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -23,7 +30,7 @@ const LoginScreen = ({ onSwitchView }) => {
 
         try {
             await signInWithEmailAndPassword(auth, email, password);
-            // onAuthStateChanged en App.jsx se encargará del resto.
+            navigate(from, { replace: true });
         } catch (err) {
             console.error("Error en el inicio de sesión:", err);
             setError('Correo o contraseña incorrectos. Por favor, intenta de nuevo.');
@@ -32,8 +39,19 @@ const LoginScreen = ({ onSwitchView }) => {
         }
     };
 
+    useEffect(() => {
+        if (user) {
+            navigate(from, { replace: true });
+        }
+    }, [user, navigate, from]);
+
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 relative">
+            <Link to="/" className="absolute top-6 left-6 text-sm text-gray-500 hover:text-violet-600 hover:underline flex items-center gap-1 z-10">
+                <ArrowLeft className="w-4 h-4" />
+                Volver al inicio
+            </Link>
+
             <div className="max-w-md w-full bg-white p-8 rounded-2xl modern-shadow border border-gray-200">
                 <div className="text-center mb-8">
                     <Sparkles className="mx-auto w-12 h-12 text-pink-500" />
@@ -74,9 +92,9 @@ const LoginScreen = ({ onSwitchView }) => {
 
                 <p className="text-center text-sm text-gray-600 mt-6">
                     ¿No tienes una cuenta?{' '}
-                    <button onClick={onSwitchView} className="font-semibold text-violet-600 hover:underline">
+                    <Link to="/register" className="font-semibold text-violet-600 hover:underline">
                         Regístrate aquí
-                    </button>
+                    </Link>
                 </p>
             </div>
         </div>

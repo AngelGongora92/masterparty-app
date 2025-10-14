@@ -18,11 +18,11 @@ const ServiceItem = ({ service, onEdit, onDelete, onManageAvailability }) => {
     };
 
     return (
-        <div className="bg-white p-4 rounded-xl border border-gray-200 flex flex-col sm:flex-row items-start sm:items-center gap-4 modern-shadow">
+        <div className="bg-white p-4 rounded-xl border border-gray-200 flex flex-row items-center gap-4 modern-shadow">
             {firstImage ? (
-                <img src={firstImage} alt={service.name} className="w-full sm:w-32 h-24 object-cover rounded-lg" />
+                <img src={firstImage} alt={service.name} className="w-24 h-24 sm:w-32 sm:h-24 object-cover rounded-xl flex-shrink-0" />
             ) : (
-                <div className="w-full sm:w-32 h-24 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
+                <div className="w-24 h-24 sm:w-32 sm:h-24 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400 flex-shrink-0">
                     <ImageIcon className="w-8 h-8" />
                 </div>
             )}
@@ -31,10 +31,22 @@ const ServiceItem = ({ service, onEdit, onDelete, onManageAvailability }) => {
                 <p className="text-sm text-gray-600 flex items-center gap-1"><Tag className="w-4 h-4 text-pink-500" /> {service.type} - <Users className="w-4 h-4 text-pink-500 ml-2" /> Capacidad: {getCapacityText()}</p>
                 <p className="text-xl font-extrabold text-pink-600 mt-1">Desde ${service.basePrice}</p>
             </div>
-            <div className="flex space-x-2 self-end sm:self-center">
-                <button onClick={() => onManageAvailability(service)} className="p-2 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition"><CalendarDays className="w-5 h-5" /></button>
-                <button onClick={() => onEdit(service)} className="p-2 bg-violet-100 text-violet-600 rounded-full hover:bg-violet-200 transition"><Edit className="w-5 h-5" /></button>
-                <button onClick={() => onDelete(service.id, service.name)} className="p-2 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition"><Trash2 className="w-5 h-5" /></button>
+            <div className="flex flex-col space-y-2 ml-auto">
+                <button 
+                    onClick={() => onManageAvailability(service)} 
+                    className="p-2 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition"
+                    title="Gestionar Disponibilidad"
+                ><CalendarDays className="w-5 h-5" /></button>
+                <button 
+                    onClick={() => onEdit(service)} 
+                    className="p-2 bg-violet-100 text-violet-600 rounded-full hover:bg-violet-200 transition"
+                    title="Editar Servicio"
+                ><Edit className="w-5 h-5" /></button>
+                <button 
+                    onClick={() => onDelete(service.id, service.name)} 
+                    className="p-2 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition"
+                    title="Eliminar Servicio"
+                ><Trash2 className="w-5 h-5" /></button>
             </div>
         </div>
     );

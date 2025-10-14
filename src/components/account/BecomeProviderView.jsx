@@ -1,14 +1,18 @@
 import React, { useState, useCallback } from 'react';
-import { doc, writeBatch, arrayUnion } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
+import { doc, writeBatch, arrayUnion, collectionGroup, query, where, getDocs } from 'firebase/firestore';
 import { db, appId, auth } from '../../firebase';
-import { ArrowLeft, Building, Phone, Mail, Sparkles } from 'lucide-react';
+import { ArrowLeft, Building, Phone, Mail, Sparkles, Link as LinkIcon } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
-const BecomeProviderView = ({ userId, onBack }) => {
+const BecomeProviderView = () => {
     const [formData, setFormData] = useState({
         businessName: '',
         phoneNumber: '',
         contactEmail: '',
     });
+    const { userId } = useAuth();
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -20,6 +24,15 @@ const BecomeProviderView = ({ userId, onBack }) => {
         return doc(db, `artifacts/${appId}/users/${userId}/provider/details`);
     }, [userId]);
 
+    const generateSlug = (name) => {
+        return name
+            .toLowerCase()
+            .replace(/&/g, 'and')
+            .replace(/[^a-z0-9\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .slice(0, 50);
+    };
+
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
@@ -30,6 +43,23 @@ const BecomeProviderView = ({ userId, onBack }) => {
         setError('');
 
         try {
+            // Generar un slug único automáticamente
+            const baseSlug = generateSlug(formData.businessName);
+            let finalSlug = baseSlug;
+            let slugExists = true;
+            let counter = 1;
+
+            while (slugExists) {
+                const slugQuery = query(collectionGroup(db, 'provider'), where('slug', '==', finalSlug));
+                const querySnapshot = await getDocs(slugQuery);
+                if (querySnapshot.empty) {
+                    slugExists = false;
+                } else {
+                    finalSlug = `${baseSlug}-${counter}`;
+                    counter++;
+                }
+            }
+
             // Usamos un batch para asegurar que ambas escrituras sean atómicas
             const batch = writeBatch(db);
 
@@ -38,6 +68,7 @@ const BecomeProviderView = ({ userId, onBack }) => {
                 businessName: formData.businessName,
                 phoneNumber: formData.phoneNumber,
                 contactEmail: formData.contactEmail,
+                slug: finalSlug,
                 createdAt: Date.now(),
             });
 
@@ -51,6 +82,7 @@ const BecomeProviderView = ({ userId, onBack }) => {
 
             alert('¡Felicidades! Ahora eres un proveedor. La página se recargará para mostrar tu nuevo panel.');
             await auth.currentUser.getIdToken(true); // Forzar refresco del token para que App.jsx detecte el cambio
+            navigate('/vendor/dashboard');
 
         } catch (err) {
             console.error("Error al registrarse como proveedor:", err);
@@ -62,7 +94,7 @@ const BecomeProviderView = ({ userId, onBack }) => {
 
     return (
         <div className="max-w-2xl mx-auto p-4 sm:p-8">
-            <button onClick={onBack} className="flex items-center gap-2 text-violet-600 font-semibold mb-6 hover:underline">
+            <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-violet-600 font-semibold mb-6 hover:underline">
                 <ArrowLeft className="w-5 h-5" />
                 Volver a mi perfil
             </button>

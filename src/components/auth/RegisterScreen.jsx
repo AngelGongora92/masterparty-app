@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db, appId } from '../../firebase';
-import { Sparkles, User, Mail, Lock, Calendar, Users, Phone, Eye, EyeOff } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { Sparkles, User, Mail, Lock, Calendar, Users, Phone, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
-const RegisterScreen = ({ onSwitchView }) => {
+const RegisterScreen = () => {
+    const { user } = useAuth();
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
@@ -17,6 +21,12 @@ const RegisterScreen = ({ onSwitchView }) => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+
+    useEffect(() => {
+        if (user) {
+            navigate('/');
+        }
+    }, [user, navigate]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -62,7 +72,12 @@ const RegisterScreen = ({ onSwitchView }) => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 relative">
+            <Link to="/" className="absolute top-6 left-6 text-sm text-gray-500 hover:text-violet-600 hover:underline flex items-center gap-1 z-10">
+                <ArrowLeft className="w-4 h-4" />
+                Volver al inicio
+            </Link>
+
             <div className="max-w-lg w-full bg-white p-8 rounded-2xl modern-shadow border border-gray-200">
                 <div className="text-center mb-8">
                     <Sparkles className="mx-auto w-12 h-12 text-pink-500" />
@@ -130,9 +145,9 @@ const RegisterScreen = ({ onSwitchView }) => {
 
                 <p className="text-center text-sm text-gray-600 mt-6">
                     ¿Ya tienes una cuenta?{' '}
-                    <button onClick={onSwitchView} className="font-semibold text-violet-600 hover:underline">
+                    <Link to="/login" className="font-semibold text-violet-600 hover:underline">
                         Inicia sesión
-                    </button>
+                    </Link>
                 </p>
             </div>
         </div>
