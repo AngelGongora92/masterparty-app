@@ -1,5 +1,18 @@
 {
   "projects": {
     "default": "masterparty-app-2025"
-  }
+  },
+  "targets": {
+    "masterparty-app-2025": {
+      "hosting": {
+        "testing": [
+          "masterparty-test"
+        ],
+        "production": [
+          "masterparty-app"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

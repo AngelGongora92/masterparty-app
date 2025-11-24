@@ -21,7 +21,7 @@ const BookingStatusBadge = ({ status }) => {
 };
 
 const BookingCard = ({ booking }) => {
-    const { clientName, serviceName, bookingDate, timeSlots, package: pkg, status, id: bookingId } = booking;
+    const { clientName, serviceName, slotsByDate, package: pkg, status, id: bookingId } = booking;
 
     const formatTime = (slot) => {
         const [hour, minute] = slot.split(':');
@@ -29,6 +29,33 @@ const BookingCard = ({ booking }) => {
         const ampm = hourNum >= 12 ? 'PM' : 'AM';
         const formattedHour = hourNum % 12 === 0 ? 12 : hourNum % 12;
         return `${formattedHour}:${minute} ${ampm}`;
+    };
+
+    // Función para obtener la primera fecha de la reserva desde slotsByDate
+    const getBookingDate = () => {
+        if (!slotsByDate || Object.keys(slotsByDate).length === 0) {
+            return 'Fecha no disponible';
+        }
+        const firstDate = Object.keys(slotsByDate).sort()[0];
+        // El formato 'YYYY-MM-DD' necesita 'T00:00:00' para evitar problemas de zona horaria
+        return new Date(firstDate + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+    };
+
+    // Función para obtener el rango de tiempo de la reserva a partir de slotsByDate
+    const getBookingTimeRange = () => {
+        if (!slotsByDate || Object.keys(slotsByDate).length === 0) {
+            return 'N/A';
+        }
+
+        const sortedDates = Object.keys(slotsByDate).sort();
+        const firstDate = sortedDates[0];
+        const lastDate = sortedDates[sortedDates.length - 1];
+
+        const firstSlots = slotsByDate[firstDate];
+        const lastSlots = slotsByDate[lastDate];
+
+        if (!firstSlots || firstSlots.length === 0 || !lastSlots || lastSlots.length === 0) return 'N/A';
+        return `${formatTime(firstSlots[0])} - ${formatTime(lastSlots[lastSlots.length - 1])}`;
     };
 
     const handleUpdateStatus = async (newStatus) => {
@@ -53,10 +80,16 @@ const BookingCard = ({ booking }) => {
             </div>
             <div className="border-t my-3"></div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm text-gray-700">
-                <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-pink-500" /> <span>{new Date(bookingDate + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</span></div>
-                <div className="flex items-center gap-2"><Clock className="w-4 h-4 text-pink-500" /> <span>{formatTime(timeSlots[0])} - {formatTime(timeSlots[timeSlots.length - 1])}</span></div>
+                <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-pink-500" />
+                    <span>{getBookingDate()}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-pink-500" />
+                    <span>{getBookingTimeRange()}</span>
+                </div>
                 <div className="flex items-center gap-2"><Package className="w-4 h-4 text-pink-500" /> <span>Paquete: {pkg.name}</span></div>
-                <div className="flex items-center gap-2"><DollarSign className="w-4 h-4 text-pink-500" /> <span className="font-semibold">${pkg.price}</span></div>
+                <div className="flex items-center gap-2"><DollarSign className="w-4 h-4 text-pink-500" /> <span className="font-semibold">${pkg.price.toLocaleString('es-MX')}</span></div>
             </div>
             {status === 'pending' && (
                 <div className="flex justify-end gap-2 mt-4">

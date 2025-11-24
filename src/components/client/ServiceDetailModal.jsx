@@ -70,12 +70,13 @@ const AvailabilityCalendar = ({ unavailableDates = [], blockedSlots = {}, onDate
     );
 };
 
-const ServiceDetailModal = ({ service, onClose }) => {
-    const [view, setView] = useState('details'); // 'details' o 'availability'
+const ServiceDetailModal = ({ service, onClose, initialView = 'details' }) => {
+    const [view, setView] = useState(initialView); // 'details' o 'availability'
     const [selectedDate, setSelectedDate] = useState(null);
     const [selectedSlots, setSelectedSlots] = useState([]);
     const [selectedPackage, setSelectedPackage] = useState(null); // Ahora es el paquete completo
     const [selectedCapacityTier, setSelectedCapacityTier] = useState(null);
+    const [notes, setNotes] = useState(''); // Estado para las notas
     const { userId, userData } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
@@ -125,30 +126,66 @@ const ServiceDetailModal = ({ service, onClose }) => {
         }
     }, [selectedPackage]);
 
+    // --- Lógica de Reserva ---
+
     const handleStartTimeSelect = (startSlot) => {
         if (!selectedPackage) return; // No se puede seleccionar hora sin un paquete
+
         const durationInSlots = (selectedPackage.duration || 1) / 0.5;
         const startIndex = timeSlots.indexOf(startSlot);
-        
         if (startIndex === -1) return;
 
-        const requiredSlots = timeSlots.slice(startIndex, startIndex + durationInSlots);
+        const requiredSlotsInfo = [];
+        let currentDay = new Date(selectedDate);
+        currentDay.setUTCHours(0, 0, 0, 0);
 
-        // Verificar si todos los slots requeridos están disponibles
-        const dateString = selectedDate.toISOString().split('T')[0];
-        const blockedForDay = service.blockedSlots?.[dateString]?.[service.id] || [];
-        const areAllSlotsAvailable = requiredSlots.every(slot => !blockedForDay.includes(slot));
+        for (let i = 0; i < durationInSlots; i++) {
+            const slotIndex = (startIndex + i) % timeSlots.length;
+            const slot = timeSlots[slotIndex];
 
-        if (requiredSlots.length === durationInSlots && areAllSlotsAvailable) {
-            setSelectedSlots(requiredSlots);
+            // Si el índice del slot vuelve a 0, significa que hemos pasado al día siguiente
+            if (i > 0 && slotIndex === 0) {
+                currentDay.setUTCDate(currentDay.getUTCDate() + 1);
+            }
+
+            const dateString = currentDay.toISOString().split('T')[0];
+            requiredSlotsInfo.push({ slot, date: dateString });
+        }
+
+        // Verificar si todos los slots requeridos están disponibles en sus respectivas fechas
+        const areAllSlotsAvailable = requiredSlotsInfo.every(slotInfo => {
+            const blockedForDay = service.blockedSlots?.[slotInfo.date]?.[service.id] || [];
+            return !blockedForDay.includes(slotInfo.slot);
+        });
+
+        if (areAllSlotsAvailable) {
+            setSelectedSlots(requiredSlotsInfo);
         } else {
-            // Opcional: mostrar un aviso al usuario
             alert("No hay suficiente tiempo disponible a partir de esta hora para la duración del servicio.");
             setSelectedSlots([]);
         }
     };
 
     const handleBookingRequest = async () => {
+        // Validación robusta antes de crear la reserva
+        if (!selectedPackage || !selectedDate || selectedSlots.length === 0) {
+            alert('Por favor, completa todos los pasos: selecciona un paquete, una fecha y una hora de inicio.');
+            return;
+        }
+        if (userId === 'guest') {
+            // Esta lógica ya se maneja en handlePrimaryAction, pero es una buena práctica de defensa.
+            return;
+        }
+
+        // Agrupamos los slots por fecha para guardarlos en Firestore
+        const slotsByDate = selectedSlots.reduce((acc, slotInfo) => {
+            acc[slotInfo.date] = acc[slotInfo.date] || [];
+            acc[slotInfo.date].push(slotInfo.slot);
+            return acc;
+        }, {});
+        
+        const firstDateString = Object.keys(slotsByDate).sort()[0];
+
         const bookingData = {
             clientId: userId,
             clientName: `${userData.firstName} ${userData.lastName}`,
@@ -156,10 +193,11 @@ const ServiceDetailModal = ({ service, onClose }) => {
             serviceId: service.id,
             businessName: service.businessName,
             serviceName: service.name,
+            bookingDate: new Date(firstDateString + 'T00:00:00'), // Guardar como objeto Date/Timestamp
             package: selectedPackage, // Guardamos el paquete completo
-            bookingDate: selectedDate.toISOString().split('T')[0],
-            timeSlots: selectedSlots,
+            slotsByDate: slotsByDate, // Nueva estructura para los slots
             status: 'pending',
+            notes: notes, // Guardamos las notas
             createdAt: serverTimestamp(),
         };
         try {
@@ -263,8 +301,6 @@ const ServiceDetailModal = ({ service, onClose }) => {
                                         <div className="max-w-[10rem] mx-auto space-y-2">
                                             {hours.map(hour => {
                                                 const hourString = hour.toString().padStart(2, '0');
-                                                const dateString = selectedDate.toISOString().split('T')[0];
-                                                const blockedForDay = service.blockedSlots?.[dateString]?.[service.id] || [];
                                                 const durationInSlots = (selectedPackage.duration || 1) / 0.5;
 
                                                 return (
@@ -272,11 +308,27 @@ const ServiceDetailModal = ({ service, onClose }) => {
                                                     <div className="w-12 text-center text-sm font-bold text-gray-500">{hourString}</div>
                                                     <div className="flex-grow flex flex-col gap-1">
                                                         {[`${hourString}:00`, `${hourString}:30`].map(slot => {
+                                                            // Lógica corregida para verificar si un slot está bloqueado, considerando que puede cruzar la medianoche.
+                                                            let isBlocked = false;
                                                             const startIndex = timeSlots.indexOf(slot);
-                                                            const requiredSlots = timeSlots.slice(startIndex, startIndex + durationInSlots);
-                                                            const isBlocked = requiredSlots.length < durationInSlots || requiredSlots.some(s => blockedForDay.includes(s));
-                                                            const isSelected = selectedSlots.includes(slot);
-                                                            const isSelectionStart = selectedSlots[0] === slot;
+                                                            let tempDate = new Date(selectedDate);
+                                                            tempDate.setUTCHours(0, 0, 0, 0);
+
+                                                            for (let i = 0; i < durationInSlots; i++) {
+                                                                const slotIndex = (startIndex + i) % timeSlots.length;
+                                                                if (i > 0 && slotIndex === 0) {
+                                                                    tempDate.setUTCDate(tempDate.getUTCDate() + 1);
+                                                                }
+                                                                const dateString = tempDate.toISOString().split('T')[0];
+                                                                const blockedForDay = service.blockedSlots?.[dateString]?.[service.id] || [];
+                                                                if (blockedForDay.includes(timeSlots[slotIndex])) {
+                                                                    isBlocked = true;
+                                                                    break;
+                                                                }
+                                                            }
+
+                                                            const isSelected = selectedSlots.some(s => s.slot === slot);
+                                                            const isSelectionStart = selectedSlots[0]?.slot === slot;
 
                                                             return (
                                                                 <button
@@ -300,6 +352,17 @@ const ServiceDetailModal = ({ service, onClose }) => {
                                     </div>
                                 </div>
                             )}
+                            {/* Campo de Notas/Comentarios */}
+                            <div className="mt-6">
+                                <h4 className="font-bold text-gray-700 mb-2">3. Notas o comentarios (opcional)</h4>
+                                <textarea
+                                    value={notes}
+                                    onChange={(e) => setNotes(e.target.value)}
+                                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-violet-500 focus:border-violet-500 transition"
+                                    rows="3"
+                                    placeholder="¿Alguna petición especial o pregunta para el proveedor?"
+                                ></textarea>
+                            </div>
                         </>
                     )}
                 </div>

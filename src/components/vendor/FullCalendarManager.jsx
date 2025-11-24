@@ -46,8 +46,8 @@ const FullCalendarManager = () => {
                 const q = query(servicesCollectionRef, where("vendorId", "==", userId));
                 const querySnapshot = await getDocs(q);
                 const fetchedServices = querySnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    name: doc.data().name,
+                    id: doc.id, // Mantener el ID del documento
+                    ...doc.data(), // Obtener todos los datos del documento, incluyendo 'packages' y 'capacity'
                 }));
                 setServices(fetchedServices);
             } catch (error) {

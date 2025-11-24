@@ -39,12 +39,65 @@ import VendorStorefrontView from './components/vendor/VendorStorefrontView.jsx';
 export const LandingView = () => (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center bg-violet-700 text-white">
         <Sparkles className="w-12 h-12 text-pink-400 mb-4" />
-        <h1 className="text-4xl font-extrabold mb-4">MasterParty Pro</h1>
+        <h1 className="text-4xl font-extrabold mb-4">Master Party</h1>
         <p className="text-lg mb-8">Cargando los mejores servicios para tu evento...</p>
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-pink-500"></div>
     </div>
 );
 
+/**
+ * Vista temporal de "Próximamente".
+ */
+const ComingSoonView = () => {
+    const services = [
+        // Tipos de Evento
+        'Bodas', 'XV Años', 'Sweet 16', 'XV años', 'Fiestas Infantiles', 'Bautizos', 'Primeras Comuniones', 'Eventos Corporativos',
+        // Lugares
+        'Salones de Eventos', 'Jardines para Eventos', 'Haciendas', 'Terrazas',
+        // Comida y Bebida
+        'Catering', 'Banquetes', 'Taquizas', 'Barras de Snacks', 'Mesas de Dulces', 'Pasteles', 'Food Trucks', 'Coctelería',
+        // Entretenimiento
+        'Música en Vivo', 'DJ', 'Magos', 'Payasos', 'Show Infantil', 'Animadores', 'Bandas Musicales',
+        // Servicios y Decoración
+        'Decoración', 'Globos', 'Mobiliario', 'Renta de Sillas y Mesas', 'Carpas y Lonas', 'Pistas de Baile', 'Iluminación Profesional',
+        // Multimedia
+        'Fotografía', 'Video', 'Cabinas de Fotos',
+        // Otros
+        'Invitaciones', 'Planeador de Eventos'
+    ];
+
+    return (
+        <div className="relative flex flex-col items-center justify-center min-h-screen p-4 text-center bg-gray-900 text-white overflow-hidden">
+            {/* Contenedor de palabras animadas */}
+            <div className="absolute inset-0 z-0">
+                {services.map((service, index) => {
+                    const style = {
+                        left: `${Math.random() * 90}%`,
+                        animationDuration: `${Math.random() * 10 + 10}s`, // Duración entre 10s y 20s
+                        animationDelay: `${Math.random() * 15}s`, // Retraso hasta 15s
+                        fontSize: `${Math.random() * 1 + 1}rem`, // Tamaño de fuente entre 1rem y 2rem
+                    };
+                    return (
+                        <span
+                            key={index}
+                            className="absolute bottom-0 opacity-0 text-gray-400/40 animate-float-up"
+                            style={style}
+                        >
+                            {service}
+                        </span>
+                    );
+                })}
+            </div>
+
+            {/* Contenido Principal */}
+            <div className="relative z-10 flex flex-col items-center">
+                <h1 className="text-5xl md:text-6xl font-extrabold text-violet-400 mb-3">Master Party</h1>
+                <p className="text-xl md:text-2xl text-pink-400 mb-12">El control maestro de tu celebración.</p>
+                <p className="text-2xl md:text-3xl font-light animate-pulse">Muy pronto...</p>
+            </div>
+        </div>
+    );
+};
 
 // =====================================================================
 // 3. COMPONENTE PRINCIPAL (APP)
@@ -123,10 +176,11 @@ const AppContent = () => {
 
 export default function App() {
     return (
-        <AuthProvider>
-            <BrowserRouter>
-                <AppContent />
-            </BrowserRouter>
-        </AuthProvider>
+        <ComingSoonView />
+        // <AuthProvider>
+        //     <BrowserRouter>
+        //         <AppContent />
+        //     </BrowserRouter>
+        // </AuthProvider>
     );
 }

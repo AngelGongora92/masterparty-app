@@ -54,7 +54,7 @@ export const AuthProvider = ({ children }) => {
                 // Si el documento no existe (caso raro, el registro debería crearlo), lo creamos.
                 const newUserProfile = { roles: ['cliente'], createdAt: Date.now(), email: user.email };
                 await setDoc(userDocRef, newUserProfile);
-                setUserRoles(['cliente']);
+                setUserRoles(newUserProfile.roles);
                 setUserData(newUserProfile);
             }
         });
