@@ -6,10 +6,8 @@
     "masterparty-app-2025": {
       "hosting": {
         "testing": [
+          "masterparty-app",
           "masterparty-test"
-        ],
-        "production": [
-          "masterparty-app"
         ]
       }
     }
