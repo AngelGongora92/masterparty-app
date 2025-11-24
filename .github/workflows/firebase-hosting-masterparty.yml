@@ -33,7 +33,7 @@ jobs:
         # Este comando compila tu código y genera la carpeta 'dist'
         run: npm run build
 
-      - name: Deploy to Firebase Hosting
+      - name: Deploy to Firebase Hosting Testing Target
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           # Token de GitHub para la acción (necesario por defecto)
@@ -42,6 +42,13 @@ jobs:
           # Para la versión @v0, se usa 'firebaseServiceAccount' para pasar el JSON de la cuenta de servicio.
           firebaseServiceAccount: '${{ secrets.FIREBASE_TOKEN }}'
 
-          channelId: live
+          # --- SECCIÓN MODIFICADA ---
+          # Comentamos la línea que despliega a producción:
+          # channelId: live
+
+          # Agregamos la línea que usa tu objetivo de pruebas definido en firebase.json:
+          target: testing
+          # --------------------------
+          
           # ID del proyecto en Firebase
           projectId: masterparty-app

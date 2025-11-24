@@ -2,20 +2,22 @@ import React from 'react';
 import { Users, Trash2, Tag, Edit, Image as ImageIcon, CalendarDays } from 'lucide-react';
 
 const ServiceItem = ({ service, onEdit, onDeleteService, onManageAvailability }) => {
-    const firstImage = service.imageUrls && service.imageUrls.length > 0 ? service.imageUrls[0] : null;
+  const firstImage = service.imageUrls && service.imageUrls.length > 0 ? service.imageUrls[0] : null;
 
-    const getCapacityText = () => {
-        if (!service.capacityTiers || service.capacityTiers.length === 0) {
-            return service.baseCapacity || ''; // Fallback por si acaso
-        }
-        if (service.capacityTiers.length === 1) {
-            return service.capacityTiers[0].capacity;
-        }
-        const capacities = service.capacityTiers.map(t => t.capacity);
-        const min = Math.min(...capacities);
-        const max = Math.max(...capacities);
-        return `${min} - ${max}`;
-    };
+  const getCapacityText = () => {
+    const packagesWithCapacity = service.packages?.filter(p => p.capacity && p.capacity.trim() !== '' && p.capacity.trim().toLowerCase() !== 'n/a');
+
+    if (!packagesWithCapacity || packagesWithCapacity.length === 0) {
+      return null; // Devuelve null si no hay paquetes con capacidad
+    }
+    if (packagesWithCapacity.length === 1) {
+      return packagesWithCapacity[0].capacity;
+    }
+    const capacities = packagesWithCapacity.map(p => parseInt(p.capacity, 10)).filter(c => !isNaN(c));
+    return capacities.length > 0 ? `${Math.min(...capacities)} - ${Math.max(...capacities)}` : null;
+  };
+
+  const capacityText = getCapacityText();
 
     return (
         <div className="bg-white p-4 rounded-xl border border-gray-200 flex flex-row items-center gap-4 modern-shadow">
@@ -28,7 +30,12 @@ const ServiceItem = ({ service, onEdit, onDeleteService, onManageAvailability })
             )}
             <div className="flex-grow">
                 <h3 className="font-bold text-lg text-violet-800">{service.name}</h3>
-                <p className="text-sm text-gray-600 flex items-center gap-1"><Tag className="w-4 h-4 text-pink-500" /> {service.type} - <Users className="w-4 h-4 text-pink-500 ml-2" /> Capacidad: {getCapacityText()}</p>
+                <div className="text-sm text-gray-600 flex items-center gap-2 flex-wrap">
+                    <span className="flex items-center gap-1"><Tag className="w-4 h-4 text-pink-500" /> {service.type}</span>
+                    {capacityText && (
+                        <span className="flex items-center gap-1"><Users className="w-4 h-4 text-pink-500" /> Capacidad: {capacityText}</span>
+                    )}
+                </div>
                 <p className="text-xl font-extrabold text-pink-600 mt-1">Desde ${service.basePrice}</p>
             </div>
             <div className="flex flex-col space-y-2 ml-auto">

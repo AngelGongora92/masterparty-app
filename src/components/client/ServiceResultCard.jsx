@@ -15,11 +15,19 @@ const ServiceResultCard = ({ service, onViewDetails }) => {
         }
     }, [imageUrls, hasMultipleImages]);
 
+    // Función para obtener el texto de capacidad a partir de los paquetes
     const getCapacityText = () => {
-        if (!service.capacityTiers || service.capacityTiers.length === 0) return service.baseCapacity || '';
-        if (service.capacityTiers.length === 1) return service.capacityTiers[0].capacity;
-        const capacities = service.capacityTiers.map(t => t.capacity);
-        return `${Math.min(...capacities)} - ${Math.max(...capacities)}`;
+        const packagesWithCapacity = service.packages?.filter(p => p.capacity && p.capacity.trim() !== '' && p.capacity.trim().toLowerCase() !== 'n/a');
+
+        if (!packagesWithCapacity || packagesWithCapacity.length === 0) {
+            return null; // Devuelve null si no hay paquetes con capacidad válida
+        }
+        if (packagesWithCapacity.length === 1) {
+            return packagesWithCapacity[0].capacity;
+        }
+        // Si hay varios paquetes, calcula el rango de capacidad
+        const capacities = packagesWithCapacity.map(p => parseInt(p.capacity, 10)).filter(c => !isNaN(c));
+        return capacities.length > 0 ? `${Math.min(...capacities)} - ${Math.max(...capacities)}` : null;
     };
 
     return (
@@ -49,8 +57,10 @@ const ServiceResultCard = ({ service, onViewDetails }) => {
                 <h3 className="font-bold text-lg text-violet-800 truncate">{service.name}</h3>
                 {service.businessName && <p className="text-xs text-gray-500 flex items-center gap-1 mt-1.5"><Building2 className="w-3.5 h-3.5 text-pink-500" /> {service.businessName}</p>}
                 <p className="text-sm text-gray-600 flex items-center gap-1 mt-1"><Tag className="w-4 h-4 text-pink-500" /> {service.type}</p>
-                <p className="text-sm text-gray-600 flex items-center gap-1 mt-1"><Users className="w-4 h-4 text-pink-500" /> Capacidad: {getCapacityText()}</p>
-                <p className="text-xl font-extrabold text-pink-600 mt-2">Desde ${service.basePrice}</p>
+                {getCapacityText() && ( // Renderiza condicionalmente si hay capacidad
+                    <p className="text-sm text-gray-600 flex items-center gap-1 mt-1"><Users className="w-4 h-4 text-pink-500" /> Capacidad: {getCapacityText()}</p>
+                )}
+                <p className="text-xl font-extrabold text-pink-600 mt-2">Desde ${service.basePrice.toLocaleString('es-MX')}</p>
                 <div className="hidden sm:block mt-auto pt-2">
                     <button className="w-full bg-violet-600 text-white font-semibold py-2 rounded-lg hover:bg-violet-700 transition">Ver Detalles</button>
                 </div>
