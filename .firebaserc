@@ -1,12 +1,14 @@
 {
   "projects": {
-    "default": "masterparty-app-2025"
+    "default": "masterparty-app"
   },
   "targets": {
-    "masterparty-app-2025": {
+    "masterparty-app": {
       "hosting": {
         "testing": [
-          "masterparty-app",
+          "masterparty-app"
+        ],
+        "masterparty-test": [
           "masterparty-test"
         ]
       }
