@@ -32,17 +32,14 @@ jobs:
       - name: Build Application (Vite/React)
         run: npm run build
 
-      # --- CAMBIOS DESDE AQUÍ ---
-
-      # 5. NUEVO PASO: Instalar la CLI de Firebase globalmente en la máquina virtual
-      - name: Install Firebase CLI
-        run: npm install -g firebase-tools
-
-      # 6. NUEVO PASO: Desplegar usando el comando directo
-      # Usamos el secreto FIREBASE_TOKEN para autenticarnos.
-      - name: Deploy to Testing Target (Manual CLI command)
-        env:
-             FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-        run: firebase deploy --only hosting:testing --token "$FIREBASE_TOKEN" --project masterparty-app --non-interactive
-
-      # --- FIN DE LOS CAMBIOS ---
+      # 5. Desplegar a Firebase Hosting
+      # Esta acción utiliza una cuenta de servicio (más segura) en lugar de un token.
+      # Apunta directamente al sitio 'masterparty-test' que creaste.
+      - name: Deploy to Firebase Hosting (masterparty-test)
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_MASTERPARTY_APP }}'
+          projectId: masterparty-app
+          channelId: live
+          target: masterparty-test # <-- Este es el nombre de tu sitio de hosting
