@@ -23,23 +23,21 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          cache-dependency-path: '**/package-lock.json' # Mejora el cache
 
-      # 3. Instala las dependencias de tu proyecto
+      # 3. Instala las dependencias (raíz y functions)
       - name: Install Dependencies
-        run: npm install
+        run: |
+          npm install
+          cd functions && npm install && cd ..
 
       # 4. Construye tu aplicación (crea la carpeta 'dist')
       - name: Build Application (Vite/React)
         run: npm run build
 
-      # 5. Desplegar a Firebase Hosting
-      # Esta acción utiliza una cuenta de servicio (más segura) en lugar de un token.
-      # Apunta directamente al sitio 'masterparty-test' que creaste.
-      - name: Deploy to Firebase Hosting (masterparty-test)
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_MASTERPARTY_APP }}'
-          projectId: masterparty-app
-          channelId: live
-          target: masterparty-test # <-- Este es el nombre de tu sitio de hosting
+      # 5. Desplegar a Firebase (Hosting y Functions) usando la CLI
+      - name: Deploy to Firebase
+        run: |
+          npx firebase-tools deploy --only hosting:masterparty-test,functions --project masterparty-app --force
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
