@@ -16,7 +16,9 @@ apiClient.setApiKey(SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey, brevoApiKe
 /**
  * Guarda el correo de un proveedor interesado en una nueva colección 'providerLeads'.
  */
-exports.addProviderLead = functions.https.onRequest((req, res) => {
+exports.addProviderLead = functions
+  .runWith({ secrets: ["BREVO_KEY"] }) // <-- Declara que la función necesita este secreto.
+  .https.onRequest((req, res) => {
   // Habilita CORS para que tu web pueda llamar a esta función
   cors(req, res, async () => {
     // Solo permitimos peticiones POST
