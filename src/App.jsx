@@ -25,6 +25,7 @@ import ServiceDetailModal from './components/client/ServiceDetailModal.jsx';
 import VendorBookingsView from './components/vendor/VendorBookingsView.jsx';
 import ClientBookingsView from './components/client/ClientBookingsView.jsx';
 import VendorStorefrontView from './components/vendor/VendorStorefrontView.jsx';
+import ProviderSignupForm from './components/common/ProviderSignupForm.jsx';
 
 // =====================================================================
 // 1. CONFIGURACIÓN INICIAL
@@ -50,50 +51,66 @@ export const LandingView = () => (
  */
 const ComingSoonView = () => {
     const services = [
-        // Tipos de Evento
-        'Bodas', 'XV Años', 'Sweet 16', 'XV años', 'Fiestas Infantiles', 'Bautizos', 'Primeras Comuniones', 'Eventos Corporativos',
+        // Eventos
+        'Bodas', 'XV Años', 'Fiestas Infantiles', 'Bautizos', 'Primeras Comuniones', 'Eventos Corporativos', 'Graduaciones', 'Aniversarios', 'Baby Showers', 'Despedidas de Soltero/a', 'Propuestas de Matrimonio',
         // Lugares
-        'Salones de Eventos', 'Jardines para Eventos', 'Haciendas', 'Terrazas',
+        'Salones de Eventos', 'Jardines para Fiestas', 'Haciendas', 'Terrazas para Eventos', 'Quintas', 'Lofts para Fiestas', 'Pool Parties', 'Renta de Yates', 'Espacios Industriales',
         // Comida y Bebida
-        'Catering', 'Banquetes', 'Taquizas', 'Barras de Snacks', 'Mesas de Dulces', 'Pasteles', 'Food Trucks', 'Coctelería',
+        'Catering Gourmet', 'Banquetes', 'Taquizas a Domicilio', 'Barras de Snacks', 'Mesas de Dulces y Postres', 'Pasteles Personalizados', 'Food Trucks', 'Coctelería Móvil', 'Baristas de Café', 'Mixólogos', 'Servicio de Parrillada',
         // Entretenimiento
-        'Música en Vivo', 'DJ', 'Magos', 'Payasos', 'Show Infantil', 'Animadores', 'Bandas Musicales',
-        // Servicios y Decoración
-        'Decoración', 'Globos', 'Mobiliario', 'Renta de Sillas y Mesas', 'Carpas y Lonas', 'Pistas de Baile', 'Iluminación Profesional',
-        // Multimedia
-        'Fotografía', 'Video', 'Cabinas de Fotos',
-        // Otros
-        'Invitaciones', 'Planeador de Eventos'
+        'Música en Vivo', 'DJ Profesional', 'Mariachis', 'Bandas de Rock', 'Grupos Versátiles', 'Magos y Mentalistas', 'Payasos y Animadores', 'Shows de Stand-up', 'Performance de Fuego', 'Bailarines', 'Karaoke',
+        // Decoración y Mobiliario
+        'Decoración Temática', 'Arreglos Florales', 'Centros de Mesa', 'Decoración con Globos', 'Mobiliario Lounge', 'Renta de Sillas y Mesas', 'Carpas y Toldos', 'Pistas de Baile Iluminadas', 'Letras Gigantes',
+        // Tecnología y Multimedia
+        'Iluminación Arquitectónica', 'Sonido Profesional', 'Pantallas LED', 'Proyectores de Video', 'Fotografía Profesional', 'Video y Cinematografía de Eventos', 'Cabinas de Fotos 360', 'Drones para Eventos', 'Transmisión en Vivo',
+        // Servicios Adicionales
+        'Invitaciones Digitales', 'Planeador de Eventos (Wedding Planner)', 'Coordinador de Día', 'Hostess y Edecanes', 'Valet Parking', 'Seguridad para Eventos', 'Maquillaje y Peinado', 'Renta de Autos Clásicos', 'Animación para Adultos'
     ];
+
+    // Para crear un efecto de scroll infinito, duplicamos la lista de servicios
+    // y los dividimos en columnas.
+    const numColumns = 7;
+    const columns = Array.from({ length: numColumns }, () => []);
+    services.forEach((service, index) => {
+        columns[index % numColumns].push(service);
+    });
 
     return (
         <div className="relative flex flex-col items-center justify-center min-h-screen p-4 text-center bg-gray-900 text-white overflow-hidden">
-            {/* Contenedor de palabras animadas */}
-            <div className="absolute inset-0 z-0">
-                {services.map((service, index) => {
-                    const style = {
-                        left: `${Math.random() * 90}%`,
-                        animationDuration: `${Math.random() * 10 + 10}s`, // Duración entre 10s y 20s
-                        animationDelay: `${Math.random() * 15}s`, // Retraso hasta 15s
-                        fontSize: `${Math.random() * 1 + 1}rem`, // Tamaño de fuente entre 1rem y 2rem
-                    };
-                    return (
-                        <span
-                            key={index}
-                            className="absolute bottom-0 opacity-0 text-gray-400/40 animate-float-up"
-                            style={style}
-                        >
-                            {service}
-                        </span>
-                    );
-                })}
+            {/* Fondo animado con columnas en cascada */}
+            <div className="absolute inset-0 z-0 flex justify-center gap-x-4 md:gap-x-8 opacity-20 pointer-events-none">
+                {columns.map((column, colIndex) => (
+                    <div
+                        key={colIndex}
+                        className="animate-scroll-vertical"
+                        style={{
+                            // Duraciones aleatorias para el efecto de paralaje
+                            animationDuration: `${Math.random() * 20 + 30}s`,
+                            // Alternamos la dirección del scroll
+                            animationDirection: colIndex % 2 === 0 ? 'reverse' : 'normal',
+                        }}
+                    >
+                        {/* Duplicamos el contenido DENTRO del div animado para un bucle perfecto */}
+                        <div className="flex flex-col space-y-4">
+                            {column.map((service, serviceIndex) => <span key={serviceIndex} className="text-lg text-gray-400 whitespace-nowrap">{service}</span>)}
+                        </div>
+                        <div className="flex flex-col space-y-4" aria-hidden="true">
+                            {column.map((service, serviceIndex) => <span key={`dup-${serviceIndex}`} className="text-lg text-gray-400 whitespace-nowrap">{service}</span>)}
+                        </div>
+                    </div>
+                ))}
             </div>
 
             {/* Contenido Principal */}
             <div className="relative z-10 flex flex-col items-center">
-                <h1 className="text-5xl md:text-6xl font-extrabold text-violet-400 mb-3">Master Party</h1>
-                <p className="text-xl md:text-2xl text-pink-400 mb-12">El control maestro de tu celebración.</p>
+                <h1 className="text-5xl md:text-7xl font-bold text-violet-400 mb-3 tracking-tight">Master Party</h1>
+                <p className="text-xl md:text-2xl font-light text-pink-400 mb-12">El control maestro de tu celebración.</p>
                 <p className="text-2xl md:text-3xl font-light animate-pulse">Muy pronto...</p>
+            </div>
+
+            {/* Formulario para proveedores */}
+            <div className="relative z-10 mt-16 w-full max-w-lg px-4">
+                <ProviderSignupForm />
             </div>
         </div>
     );

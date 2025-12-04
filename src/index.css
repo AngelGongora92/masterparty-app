@@ -2,19 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
-@keyframes floatUp {
+@keyframes scroll-vertical {
   from {
     transform: translateY(0);
-    opacity: 0.5;
   }
   to {
-    transform: translateY(-100vh);
-    opacity: 0;
+    transform: translateY(-50%);
   }
 }
 
-.animate-float-up {
-  animation-name: floatUp;
+.animate-scroll-vertical {
+  animation-name: scroll-vertical;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
 }
