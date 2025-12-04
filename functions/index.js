@@ -8,7 +8,10 @@ admin.initializeApp();
 
 // Configura el cliente de Brevo con tu clave de API.
 const apiClient = new SibApiV3Sdk.TransactionalEmailsApi();
-apiClient.setApiKey(SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey, functions.config().brevo.key);
+// Usa variables de entorno. En local, las tomará de .env.local. En producción, se configuran en Google Cloud.
+// functions.config() está obsoleto.
+const brevoApiKey = process.env.BREVO_KEY;
+apiClient.setApiKey(SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey, brevoApiKey);
 
 /**
  * Guarda el correo de un proveedor interesado en una nueva colección 'providerLeads'.

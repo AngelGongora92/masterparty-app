@@ -5,7 +5,7 @@
   "targets": {
     "masterparty-app": {
       "hosting": {
-        "testing": [
+        "production": [
           "masterparty-app"
         ],
         "masterparty-test": [

@@ -12,11 +12,8 @@ function ProviderSignupForm() {
     setMessage('');
     setError('');
 
-    // Lee la URL desde las variables de entorno para mayor seguridad y flexibilidad.
-    const functionUrl = import.meta.env.VITE_ADD_PROVIDER_LEAD_FUNCTION_URL;
-
     try {
-      const response = await fetch(functionUrl, {
+      const response = await fetch('/api/lead', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
