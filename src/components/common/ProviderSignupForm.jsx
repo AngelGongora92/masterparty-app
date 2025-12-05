@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 
 // Lista completa de los estados de México para el dropdown.
 const mexicanStates = [
@@ -17,20 +18,30 @@ function ProviderSignupForm() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { executeRecaptcha } = useGoogleReCaptcha();
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = useCallback(async (event) => {
     event.preventDefault();
+
+    if (!executeRecaptcha) {
+      setError("El validador reCAPTCHA no está listo. Intenta de nuevo.");
+      return;
+    }
+
     setIsLoading(true);
     setMessage('');
     setError('');
 
     try {
+      // Generamos el token de reCAPTCHA para esta acción
+      const token = await executeRecaptcha('providerSignup');
+
       const response = await fetch('/api/lead', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, state }), // Enviamos también el estado
+        body: JSON.stringify({ email, state, token }), // Enviamos el token al backend
       });
 
       const data = await response.json();
@@ -47,7 +58,7 @@ function ProviderSignupForm() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [email, state, executeRecaptcha]);
 
   return (
     <div className="bg-gray-800/50 backdrop-blur-sm p-8 rounded-lg shadow-lg text-center">
