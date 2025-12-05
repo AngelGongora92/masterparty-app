@@ -1,21 +1,26 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   content: [
     "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
+    "./src/**/*.{js,ts,jsx,tsx}", // <-- Esta línea es la clave
   ],
   theme: {
     extend: {
+      textShadow: {
+        // Sombra blanca estática para un efecto de "glow"
+        'custom': '0 0 8px rgba(255, 255, 255, 0.4)',
+      },
       keyframes: {
-        fadeIn: {
-          '0%': { opacity: '0' },
-          '100%': { opacity: '1' },
-        }
+        'pulse-shadow': {
+          '0%, 100%': { textShadow: '0 0 8px rgba(255, 255, 255, 0.4)' },
+          '50%': { textShadow: '0 0 16px rgba(255, 255, 255, 0.8)' },
+        },
       },
       animation: {
-        'fade-in': 'fadeIn 0.5s ease-in-out forwards',
-      }
+        'pulse-shadow': 'pulse-shadow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+      },
     },
   },
-  plugins: [],
+  // Necesitamos un plugin para que Tailwind entienda 'textShadow'
+  plugins: [require('tailwindcss-textshadow')],
 }

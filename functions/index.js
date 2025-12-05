@@ -53,16 +53,16 @@ const reminderEmailHtml = `
  * Guarda el correo de un proveedor interesado en una nueva colección 'providerLeads'.
  */
 exports.addProviderLead = functions
-  .runWith({ secrets: ["BREVO_KEY"] }) // <-- Declara que la función necesita este secreto.
+  .runWith({ secrets: ["BREVO_KEY", "RECAPTCHA_SECRET_KEY"] }) // <-- Añadimos el secreto de reCAPTCHA
   .https.onRequest((req, res) => {
   // Habilita CORS para que tu web pueda llamar a esta función
   cors(req, res, async () => {
     // Solo permitimos peticiones POST
     if (req.method !== "POST") {
-      return res.status(405).send("Method Not Allowed");
+      return res.status(405).json({ error: "Method Not Allowed" });
     }
 
-    const { email, state } = req.body; // Recibimos el estado del cuerpo de la petición
+    const { email, state, token } = req.body; // Recibimos también el token de reCAPTCHA
 
     // Validación simple del correo
     if (!email || !/\S+@\S+\.\S+/.test(email)) {
@@ -79,6 +79,24 @@ exports.addProviderLead = functions
     }
 
     try {
+      // --- VERIFICACIÓN DE RECAPTCHA ---
+      if (!token) {
+        return res.status(400).json({ error: "Verificación anti-bot fallida. Intenta de nuevo." });
+      }
+
+      const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY;
+      const verificationUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${recaptchaSecret}&response=${token}`;
+
+      const recaptchaResponse = await fetch(verificationUrl, { method: "POST" });
+      const recaptchaData = await recaptchaResponse.json();
+
+      // Si la verificación falla o la puntuación es muy baja, rechazamos la solicitud.
+      if (!recaptchaData.success || recaptchaData.score < 0.5) {
+        console.log("Verificación de reCAPTCHA fallida:", recaptchaData);
+        return res.status(403).json({ error: "La solicitud parece ser de un bot." });
+      }
+      // --- FIN DE VERIFICACIÓN ---
+
       const db = admin.firestore();
       const providerEmail = email.toLowerCase();
 
