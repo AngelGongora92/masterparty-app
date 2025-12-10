@@ -12,6 +12,13 @@
           "masterparty-test"
         ]
       }
+    },
+    "masterparty-dev": {
+      "hosting": {
+        "masterparty-dev": [
+          "masterparty-dev"
+        ]
+      }
     }
   },
   "etags": {}

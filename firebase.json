@@ -4,7 +4,7 @@
   },
   "hosting": [
     {
-      "target": "masterparty-test",
+      "target": "masterparty-dev",
       "public": "dist",
       "ignore": [
         "firebase.json",
@@ -13,8 +13,12 @@
       ],
       "rewrites": [
         {
-          "source": "/api/**",
+          "source": "/api/lead",
           "function": "addProviderLead"
+        },
+        {
+          "source": "/api/send-verification-email",
+          "function": "sendCustomVerificationEmail"
         },
         {
           "source": "**",
@@ -32,8 +36,12 @@
       ],
       "rewrites": [
         {
-          "source": "/api/**",
+          "source": "/api/lead",
           "function": "addProviderLead"
+        },
+        {
+          "source": "/api/send-verification-email",
+          "function": "sendCustomVerificationEmail"
         },
         {
           "source": "**",

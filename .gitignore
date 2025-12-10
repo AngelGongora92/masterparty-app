@@ -22,4 +22,3 @@ functions/.env*
 
 # Firebase
 *.firebase
-.firebaserc
