@@ -7,9 +7,6 @@
       "hosting": {
         "production": [
           "masterparty-app"
-        ],
-        "masterparty-test": [
-          "masterparty-test"
         ]
       }
     },
