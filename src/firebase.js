@@ -25,8 +25,8 @@ if (missingKeys.length > 0) {
     throw new Error(`Error de configuración de Firebase: Faltan las siguientes claves en tu archivo .env: ${missingKeys.join(', ')}. Asegúrate de que el servidor de Vite se haya reiniciado después de crear el archivo .env.`);
 }
 
-// Exportamos el ID del proyecto para usarlo en otras partes de la app si es necesario
-export const appId = firebaseConfig.projectId;
+// Exportamos el appId real para usarlo en otras partes de la app si es necesario
+export const appId = firebaseConfig.appId;
 
 // Inicializa los servicios de Firebase
 export const app = initializeApp(firebaseConfig);

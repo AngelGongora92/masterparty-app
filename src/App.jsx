@@ -124,6 +124,19 @@ const AppContent = () => {
 }
 
 export default function App() {
+    // Redirección forzada al dominio personalizado si se accede desde los dominios por defecto de Firebase
+    useEffect(() => {
+        const hostname = window.location.hostname;
+        const oldDomains = [
+            'masterparty-app.web.app',
+            'masterparty-app.firebaseapp.com'
+        ];
+
+        if (oldDomains.includes(hostname)) {
+            window.location.replace('https://masterparty.mx' + window.location.pathname + window.location.search);
+        }
+    }, []);
+
     // Lee el modo actual de la aplicación desde las variables de entorno.
     // El valor por defecto será 'live' si no se especifica nada.
     const appMode = import.meta.env.VITE_APP_MODE || 'live';

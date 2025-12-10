@@ -46,8 +46,6 @@
   }
 }
 
-@layer components {
-  /* Estilos personalizados para react-calendar */
   .calendar-container .react-calendar {
     @apply w-full border-2 border-gray-200 rounded-xl p-2 bg-white;
   }
@@ -128,7 +126,6 @@
   .rbc-slot-selection {
     @apply bg-violet-500 bg-opacity-50;
   }
-}
 
 /* Estilos para el calendario en el modal del cliente */
 .calendar-container-client .react-calendar {
@@ -163,4 +160,57 @@
 .calendar-container-client .react-calendar__tile--active:enabled:focus,
 .calendar-container-client .react-calendar__tile--active:enabled:hover {
     @apply bg-violet-700 text-white;
+}
+
+/* Estilos personalizados para react-datepicker */
+/* Inspirado en un diseño limpio y moderno */
+.react-datepicker {
+    @apply border border-gray-200 rounded-xl font-sans shadow-lg bg-white p-2;
+}
+
+.react-datepicker__header {
+    @apply bg-transparent p-2 border-b-0;
+}
+
+.react-datepicker__current-month,
+.react-datepicker-time__header,
+.react-datepicker-year-header {
+    @apply text-gray-800 font-bold text-base;
+}
+
+.react-datepicker__day-name {
+    @apply text-gray-500 font-semibold text-xs w-9 m-1;
+}
+
+.react-datepicker__day {
+    @apply w-9 h-9 leading-9 rounded-full transition-colors duration-200;
+}
+
+.react-datepicker__day:hover {
+    @apply bg-gray-100;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--in-selecting-range,
+.react-datepicker__day--in-range {
+    @apply bg-violet-600 text-white font-bold hover:bg-violet-700;
+}
+
+.react-datepicker__day--today {
+    @apply font-bold text-violet-600 bg-violet-50 rounded-full;
+}
+
+.react-datepicker__day--disabled {
+    @apply text-gray-300;
+}
+
+.react-datepicker__navigation-icon::before {
+    @apply border-gray-400;
+}
+
+.react-datepicker__year-read-view--down-arrow,
+.react-datepicker__month-read-view--down-arrow,
+.react-datepicker__month-year-read-view--down-arrow {
+    border-color: #9ca3af; /* gray-400 */
+    border-width: 2px 2px 0 0;
 }

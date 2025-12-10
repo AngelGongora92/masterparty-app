@@ -4,6 +4,9 @@ import { doc, setDoc } from 'firebase/firestore';
 import { auth, db, appId } from '../../firebase';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { mexicoStates } from '../../data/mexico-locations'; // Importamos los datos completos
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { Sparkles, User, Mail, Lock, Calendar, Users, Phone, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
 const RegisterScreen = () => {
@@ -15,13 +18,16 @@ const RegisterScreen = () => {
         lastName: '',
         email: '',
         password: '',
-        age: '',
+        birthDate: null, // Cambiado de '' a null para react-datepicker
         gender: 'Otro',
         phoneNumber: '',
+        state: '',
+        city: '',
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [cities, setCities] = useState([]);
 
     const from = location.state?.from || "/";
 
@@ -32,7 +38,25 @@ const RegisterScreen = () => {
     }, [user, navigate, from]);
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setFormData({ ...formData, [name]: value });
+
+        // Lógica para actualizar las ciudades cuando se cambia el estado
+        if (name === 'state') {
+            const selectedState = mexicoStates.find(s => s.nombre === value);
+            if (selectedState) {
+                setCities(selectedState.municipios);
+                // Reseteamos la ciudad seleccionada para que el usuario elija una nueva
+                setFormData(prev => ({ ...prev, city: '' }));
+            } else {
+                setCities([]); // Si no se selecciona estado (o se deselecciona), vaciamos las ciudades
+            }
+        }
+    };
+
+    // Handler específico para el DatePicker
+    const handleDateChange = (date) => {
+        setFormData({ ...formData, birthDate: date });
     };
 
     const handleRegister = async (e) => {
@@ -45,6 +69,14 @@ const RegisterScreen = () => {
             const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
             const newUser = userCredential.user;
 
+            // --- FLUJO DE VERIFICACIÓN PERSONALIZADO ---
+            // Llamamos a nuestra Cloud Function para que genere el enlace y envíe el correo con Brevo.
+            await fetch('/api/send-verification-email', { // Usamos el proxy de Vite
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: newUser.email }),
+            });
+
             // 2. Crear el documento de perfil del usuario en Firestore (estructura simplificada)
             const userDocRef = doc(db, `artifacts/${appId}/users/${newUser.uid}`);
             await setDoc(userDocRef, {
@@ -52,10 +84,13 @@ const RegisterScreen = () => {
                 firstName: formData.firstName,
                 lastName: formData.lastName,
                 email: formData.email,
-                age: parseInt(formData.age, 10),
+                birthDate: formData.birthDate, // Guardamos la fecha de nacimiento
                 gender: formData.gender,
                 phoneNumber: formData.phoneNumber,
+                state: formData.state,
+                city: formData.city,
                 createdAt: Date.now(),
+                emailVerified: newUser.emailVerified, // Guardamos el estado de verificación
             });
 
             // El listener onAuthStateChanged en App.jsx se encargará de redirigir.
@@ -131,8 +166,38 @@ const RegisterScreen = () => {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Edad</label>
-                            <input type="number" name="age" onChange={handleChange} required className="mt-1 w-full p-3 border border-gray-300 rounded-xl" />
+                            <label className="block text-sm font-medium text-gray-700">Estado</label>
+                            <select name="state" value={formData.state} onChange={handleChange} required className="mt-1 w-full p-3 border border-gray-300 rounded-xl bg-white">
+                                <option value="">Selecciona un estado</option>
+                                {mexicoStates.map(state => (
+                                    <option key={state.nombre} value={state.nombre}>{state.nombre}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Ciudad / Municipio</label>
+                            <select name="city" value={formData.city} onChange={handleChange} required disabled={!formData.state} className="mt-1 w-full p-3 border border-gray-300 rounded-xl bg-white disabled:bg-gray-100">
+                                <option value="">{formData.state ? 'Selecciona una ciudad' : 'Primero elige un estado'}</option>
+                                {cities.map(city => (
+                                    <option key={city} value={city}>{city}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Fecha de Nacimiento</label>
+                            <DatePicker
+                                selected={formData.birthDate}
+                                onChange={handleDateChange}
+                                required
+                                className="mt-1 w-full p-3 border border-gray-300 rounded-xl"
+                                dateFormat="dd/MM/yyyy"
+                                placeholderText="Selecciona una fecha"
+                                maxDate={new Date()} // No se pueden seleccionar fechas futuras
+                                showYearDropdown
+                                scrollableYearDropdown
+                            />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Sexo</label>

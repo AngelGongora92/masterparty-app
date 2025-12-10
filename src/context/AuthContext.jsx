@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db, appId } from '../firebase';
 
 const AuthContext = createContext();
@@ -39,6 +39,17 @@ export const AuthProvider = ({ children }) => {
         const unsubscribeUser = onSnapshot(userDocRef, async (docSnap) => {
             if (docSnap.exists()) {
                 const userProfileData = docSnap.data();
+
+                // --- SINCRONIZACIÓN DE VERIFICACIÓN DE CORREO ---
+                // Comparamos el estado de Auth con el de Firestore.
+                if (user.emailVerified && !userProfileData.emailVerified) {
+                    console.log('Sincronizando estado de emailVerified en Firestore...');
+                    // Si son diferentes, actualizamos el documento en Firestore.
+                    await updateDoc(userDocRef, { emailVerified: true });
+                    // Actualizamos el estado local para reflejar el cambio inmediatamente.
+                    userProfileData.emailVerified = true;
+                }
+
                 const roles = userProfileData.roles || ['cliente'];
                 setUserRoles(roles);
                 // Inicialmente, establecemos solo los datos del perfil de usuario.

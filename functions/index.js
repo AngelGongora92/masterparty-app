@@ -7,48 +7,6 @@ const SibApiV3Sdk = require("@getbrevo/brevo");
 // Inicializa la app de admin para poder acceder a Firestore
 admin.initializeApp();
 
-// Configura el cliente de Brevo con tu clave de API.
-const apiClient = new SibApiV3Sdk.TransactionalEmailsApi();
-// Usa variables de entorno. En local, las tomará de .env.local. En producción, se configuran en Google Cloud.
-// functions.config() está obsoleto.
-const brevoApiKey = process.env.BREVO_KEY;
-apiClient.setApiKey(SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey, brevoApiKey);
-
-// --- Contenido de los correos ---
-const welcomeEmailHtml = `
-  <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-    <div style="background-color: #8B5CF6; color: white; padding: 20px; text-align: center;">
-      <h1 style="margin: 0; font-size: 24px;">Master Party</h1>
-    </div>
-    <div style="padding: 30px;">
-      <h2 style="font-size: 20px; color: #333;">¡Estás en la lista!</h2>
-      <p>Hola,</p>
-      <p>Hemos recibido tu correo y te confirmamos que ya estás en nuestra lista de espera. Serás de los primeros en saber cuándo lancemos el acceso beta para proveedores.</p>
-      <p style="margin-top: 30px;">¡Gracias por tu interés en <strong>Master Party</strong>!</p>
-      <p>— El equipo de Master Party</p>
-    </div>
-    <div style="background-color: #f7f7f7; color: #888; padding: 20px; text-align: center; font-size: 12px;">
-      <p style="margin: 0;">Recibiste este correo porque te registraste en la lista de espera de masterparty.mx</p>
-    </div>
-  </div>`;
-
-const reminderEmailHtml = `
-  <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-    <div style="background-color: #8B5CF6; color: white; padding: 20px; text-align: center;">
-      <h1 style="margin: 0; font-size: 24px;">Master Party</h1>
-    </div>
-    <div style="padding: 30px;">
-      <h2 style="font-size: 20px; color: #333;">Solo un recordatorio: ¡Ya estás en la lista!</h2>
-      <p>Hola,</p>
-      <p>Te escribimos para recordarte que ya estás en nuestra lista de espera. ¡No necesitas registrarte de nuevo! Serás de los primeros en saber cuándo lancemos el acceso beta para proveedores.</p>
-      <p style="margin-top: 30px;">¡Gracias por tu interés en <strong>Master Party</strong>!</p>
-      <p>— El equipo de Master Party</p>
-    </div>
-    <div style="background-color: #f7f7f7; color: #888; padding: 20px; text-align: center; font-size: 12px;">
-      <p style="margin: 0;">Recibiste este correo porque te registraste en la lista de espera de masterparty.mx</p>
-    </div>
-  </div>`;
-
 /**
  * Guarda el correo de un proveedor interesado en una nueva colección 'providerLeads'.
  */
@@ -106,6 +64,11 @@ exports.addProviderLead = functions
         .limit(1)
         .get();
 
+      // Configura el cliente de Brevo con tu clave de API dentro de la función.
+      const apiClient = new SibApiV3Sdk.TransactionalEmailsApi();
+      const brevoApiKey = process.env.BREVO_KEY;
+      apiClient.setApiKey(SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey, brevoApiKey);
+
       if (existingLeadQuery.empty) {
         // 1. El correo es nuevo. Primero, intentamos guardarlo en la BD.
         await db.collection("providerLeads").add({
@@ -116,10 +79,9 @@ exports.addProviderLead = functions
 
         // 2. Si la escritura en la BD fue exitosa, AHORA enviamos el correo.
         const sendSmtpEmail = {
-          sender: { name: "Master Party", email: "contacto@masterparty.mx" },
           to: [{ email: providerEmail }],
-          subject: "¡Estás en la lista de espera de Master Party!",
-          htmlContent: welcomeEmailHtml,
+          // El ID de la plantilla de bienvenida que creaste en Brevo.
+          templateId: 3, // <-- ¡REEMPLAZA ESTO CON EL ID DE TU PLANTILLA DE BIENVENIDA!
         };
         await apiClient.sendTransacEmail(sendSmtpEmail);
 
@@ -129,10 +91,9 @@ exports.addProviderLead = functions
       } else {
         // Si el correo ya existe, solo enviamos el correo de recordatorio.
         const sendSmtpEmail = {
-          sender: { name: "Master Party", email: "contacto@masterparty.mx" },
           to: [{ email: providerEmail }],
-          subject: "Recordatorio: ¡Ya estás en la lista de espera!",
-          htmlContent: reminderEmailHtml,
+          // El ID de la plantilla de recordatorio que creaste en Brevo.
+          templateId: 4, // <-- ¡REEMPLAZA ESTO CON EL ID DE TU PLANTILLA DE RECORDATORIO!
         };
         await apiClient.sendTransacEmail(sendSmtpEmail);
         return res.status(200).json({ success: "¡Ya estabas en la lista! Te hemos enviado un recordatorio." });
@@ -142,6 +103,59 @@ exports.addProviderLead = functions
       return res.status(500).json({
         error: "Ocurrió un error. Por favor, inténtalo de nuevo más tarde o contáctanos en contacto@masterparty.mx.",
       });
+    }
+  });
+});
+
+/**
+ * Envía un correo de verificación de cuenta personalizado usando Brevo.
+ */
+exports.sendCustomVerificationEmail = functions
+  .runWith({ secrets: ["BREVO_KEY", "CLIENT_APP_URL"] }) // Añadimos el nuevo secreto
+  .https.onRequest((req, res) => {
+  cors(req, res, async () => {
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method Not Allowed" });
+    }
+
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: "Falta el correo electrónico." });
+    }
+
+    try {
+      // --- NUEVO: Generar el enlace de verificación en el backend ---
+      const actionCodeSettings = {
+        // Usamos una variable de entorno para la URL, con un valor por defecto seguro.
+        // Esto nos permite tener una URL para DEV y otra para PROD.
+        // La URL debe estar en la lista de dominios autorizados en la consola de Firebase.
+        url: process.env.CLIENT_APP_URL || 'https://masterparty-app.web.app/login',
+      };
+      const link = await admin.auth().generateEmailVerificationLink(email, actionCodeSettings);
+
+      // Configura el cliente de Brevo con tu clave de API dentro de la función.
+      const apiClient = new SibApiV3Sdk.TransactionalEmailsApi();
+      const brevoApiKey = process.env.BREVO_KEY;
+      apiClient.setApiKey(SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey, brevoApiKey);
+
+      const sendSmtpEmail = {
+        to: [{ email: email }],
+        // ¡IMPORTANTE! Usa el ID de la plantilla que creaste en Brevo.
+        templateId: 5,
+        params: {
+          // Estos son los parámetros que tu plantilla de Brevo espera.
+          // El nombre 'verification_link' debe coincidir con el que usaste en la plantilla.
+          verification_link: link,
+        },
+      };
+
+      await apiClient.sendTransacEmail(sendSmtpEmail);
+
+      return res.status(200).json({ success: "Correo de verificación enviado." });
+    } catch (error) {
+      console.error("Error al enviar correo de verificación con Brevo: ", error);
+      return res.status(500).json({ error: "Ocurrió un error al enviar el correo de verificación." });
     }
   });
 });
