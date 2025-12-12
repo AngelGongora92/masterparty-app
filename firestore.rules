@@ -1,0 +1,22 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 1. Configuración pública (Categorías, etc.)
+    // Permite leer a cualquiera (incluso sin login) para que la app cargue
+    match /artifacts/{appId}/public/data {
+      allow read: if true;
+    }
+
+    // 2. Usuarios
+    // Cada usuario solo puede leer/escribir su propio perfil
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Por defecto: Bloquear todo lo demás por seguridad
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
